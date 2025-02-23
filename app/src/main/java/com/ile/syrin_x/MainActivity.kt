@@ -4,44 +4,38 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import com.ile.syrin_x.ui.theme.SyrinXTheme
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import com.ile.syrin_x.composition.LocalNavController
+import com.ile.syrin_x.screen.HomeScreen
+import com.ile.syrin_x.screen.LoginScreen
+import com.ile.syrin_x.screen.RegisterScreen
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            SyrinXTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
-                        modifier = Modifier.padding(innerPadding)
-                    )
+
+            val navController = rememberNavController()
+            CompositionLocalProvider(LocalNavController provides navController) {
+                NavHost(navController = navController, startDestination = "HomeScreen") {
+                    composable("HomeScreen") {
+                        HomeScreen()
+                    }
+                    composable("LoginScreen") {
+                        LoginScreen()
+                    }
+                    composable("RegisterScreen") {
+                        RegisterScreen()
+                    }
                 }
             }
         }
-    }
-}
-
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    SyrinXTheme {
-        Greeting("Android")
     }
 }
