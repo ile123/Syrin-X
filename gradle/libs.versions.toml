@@ -1,21 +1,22 @@
 [versions]
-agp = "8.7.3"
-firebaseBom = "33.8.0"
+agp = "8.8.2"
+firebaseBom = "33.10.0"
 hiltAndroid = "2.55"
 hiltAndroidCompiler = "2.55"
 hiltCompiler = "2.55"
+hiltCompilerVersion = "2.44"
 hiltNavigationCompose = "1.2.0"
 iconsLucide = "1.0.0"
-kotlin = "2.0.0"
+kotlin = "2.1.0"
 coreKtx = "1.15.0"
 junit = "4.13.2"
 junitVersion = "1.2.1"
 espressoCore = "3.6.1"
 kotlinxSerializationJson = "1.7.3"
 lifecycleRuntimeKtx = "2.8.7"
-activityCompose = "1.10.0"
-composeBom = "2024.04.01"
-navigationCompose = "2.8.6"
+activityCompose = "1.10.1"
+composeBom = "2025.02.00"
+navigationCompose = "2.8.8"
 firebaseAuthKtx = "23.2.0"
 firebaseFirestoreKtx = "25.1.2"
 firebaseCrashlyticsBuildtools = "3.0.3"
@@ -33,6 +34,7 @@ firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "fir
 hilt-android = { module = "com.google.dagger:hilt-android", version.ref = "hiltAndroid" }
 hilt-android-compiler = { module = "com.google.dagger:hilt-android-compiler", version.ref = "hiltAndroidCompiler" }
 hilt-compiler = { module = "com.google.dagger:hilt-compiler", version.ref = "hiltCompiler" }
+hilt-compiler-v244 = { module = "com.google.dagger:hilt-compiler", version.ref = "hiltCompilerVersion" }
 icons-lucide = { module = "com.composables:icons-lucide", version.ref = "iconsLucide" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }

@@ -1,4 +1,4 @@
-package com.ile.syrin_x.screen
+package com.ile.syrin_x.ui.screen
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
@@ -10,17 +10,23 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavHostController
 import com.ile.syrin_x.ui.component.HeaderComponent
 import com.ile.syrin_x.ui.component.NavigationComponent
-import com.ile.syrin_x.ui.theme.SyrinXTheme
+import com.ile.syrin_x.viewModel.HeaderViewModel
+import com.ile.syrin_x.viewModel.HomeViewModel
 
 @Composable
-fun HomeScreen() {
-    SyrinXTheme {
+fun HomeScreen(
+    navHostController: NavHostController,
+    homeViewModel: HomeViewModel = hiltViewModel(),
+    headerViewModel: HeaderViewModel = hiltViewModel()
+) {
         Scaffold(
             modifier = Modifier.fillMaxSize(),
             topBar = {
-                HeaderComponent()
+                HeaderComponent(headerViewModel)
             },
             bottomBar = {
                 NavigationComponent()
@@ -35,5 +41,4 @@ fun HomeScreen() {
 
             }
         }
-    }
 }

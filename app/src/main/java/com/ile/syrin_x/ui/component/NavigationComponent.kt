@@ -22,12 +22,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.ile.syrin_x.composition.LocalNavController
 
 @Composable
 fun NavigationComponent() {
-
-    val navController = LocalNavController.current
 
     BottomAppBar(
         containerColor = MaterialTheme.colorScheme.primary,
@@ -42,7 +39,7 @@ fun NavigationComponent() {
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier.weight(1f)
             ) {
-                IconButton(onClick = { navController.navigate("HomeScreen") }) {
+                IconButton(onClick = {  }) {
                     Icon(
                         Icons.Filled.Home,
                         contentDescription = "Home",
@@ -111,7 +108,7 @@ fun NavigationComponent() {
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier.weight(1f)
             ) {
-                IconButton(onClick = { navController.navigate("LoginScreen") }) {
+                IconButton(onClick = {  }) {
                     Icon(
                         imageVector = Icons.Outlined.Person,
                         contentDescription = "Login",

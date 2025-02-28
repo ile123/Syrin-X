@@ -4,14 +4,12 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.runtime.CompositionLocalProvider
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
-import com.ile.syrin_x.composition.LocalNavController
-import com.ile.syrin_x.screen.HomeScreen
-import com.ile.syrin_x.screen.LoginScreen
-import com.ile.syrin_x.screen.RegisterScreen
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.ui.Modifier
+import com.ile.syrin_x.ui.navigation.SetUpNavigationGraph
+import com.ile.syrin_x.ui.theme.SyrinXTheme
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -21,19 +19,12 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-
-            val navController = rememberNavController()
-            CompositionLocalProvider(LocalNavController provides navController) {
-                NavHost(navController = navController, startDestination = "HomeScreen") {
-                    composable("HomeScreen") {
-                        HomeScreen()
-                    }
-                    composable("LoginScreen") {
-                        LoginScreen()
-                    }
-                    composable("RegisterScreen") {
-                        RegisterScreen()
-                    }
+            SyrinXTheme {
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background
+                ) {
+                    SetUpNavigationGraph()
                 }
             }
         }
