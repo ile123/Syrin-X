@@ -25,7 +25,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -85,7 +84,11 @@ fun RegisterScreen(
                 onNavigateToLogin = { navHostController.popBackStack() },
                 onRegister = { userName, fullName, email, password -> registerUser(userName, fullName, email, password) },
                 registerSuccess = { navHostController.navigate(NavigationGraph.HomeScreen.route) },
-                registerError = { scope.launch { hostState.showSnackbar("Oops! something went wrong, check your connection and try again") } }
+                registerError = { errorMessage ->
+                    scope.launch {
+                        hostState.showSnackbar(errorMessage)
+                    }
+                }
             )
         }
 }
@@ -97,7 +100,7 @@ fun Content(
     onRegister: (String, String, String, String) -> Unit,
     onNavigateToLogin: () -> Unit,
     registerSuccess: () -> Unit,
-    registerError: () -> Unit
+    registerError: (error: String) -> Unit
 ) {
 
 
@@ -264,7 +267,7 @@ fun Content(
     RegisterState(
         registerFlowState = registerFlowState,
         onSuccess = { registerSuccess() },
-        onError = { registerError() }
+        onError = { errorMessage -> registerError(errorMessage) }
     )
 }
 
@@ -272,7 +275,7 @@ fun Content(
 fun RegisterState(
     registerFlowState: MutableSharedFlow<Response<AuthResult>>,
     onSuccess: () -> Unit,
-    onError: () -> Unit
+    onError: (error: String) -> Unit
 ) {
     val isLoading = remember { mutableStateOf(false) }
     if (isLoading.value) MyCircularProgress()
@@ -287,7 +290,7 @@ fun RegisterState(
                 is Response.Error -> {
                     Log.e("Register state -> ", it.message)
                     isLoading.value = false
-                    onError()
+                    onError(it.message)
                 }
 
                 is Response.Success -> {

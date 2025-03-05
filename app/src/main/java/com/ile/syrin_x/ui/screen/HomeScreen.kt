@@ -12,8 +12,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
+import com.ile.syrin_x.ui.screen.common.BottomBarNavigationComponent
 import com.ile.syrin_x.ui.screen.common.HeaderComponent
-import com.ile.syrin_x.ui.screen.common.NavigationComponent
 import com.ile.syrin_x.viewModel.HeaderViewModel
 import com.ile.syrin_x.viewModel.HomeViewModel
 
@@ -29,7 +29,7 @@ fun HomeScreen(
                 HeaderComponent(navHostController, headerViewModel)
             },
             bottomBar = {
-                NavigationComponent()
+                BottomBarNavigationComponent(navHostController)
             }
         ) { innerPadding ->
             Column(

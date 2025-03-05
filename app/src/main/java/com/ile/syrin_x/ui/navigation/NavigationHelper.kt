@@ -8,6 +8,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.ile.syrin_x.ui.screen.HomeScreen
 import com.ile.syrin_x.ui.screen.LoginScreen
+import com.ile.syrin_x.ui.screen.MusicSourceScreen
 import com.ile.syrin_x.ui.screen.RegisterScreen
 
 @Composable
@@ -36,6 +37,11 @@ fun SetUpNavigationGraph(
             route = NavigationGraph.RegisterScreen.route
         ) {
             RegisterScreen(navHostController)
+        }
+        composable(
+            route = NavigationGraph.MusicSourceScreen.route
+        ) {
+            MusicSourceScreen(navHostController)
         }
     }
 }

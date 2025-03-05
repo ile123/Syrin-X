@@ -2,6 +2,9 @@ package com.ile.syrin_x.ui.screen.common
 
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -38,6 +41,13 @@ fun HeaderComponent(
         colors = TopAppBarDefaults
             .topAppBarColors(containerColor = MaterialTheme.colorScheme.primary),
         actions = {
+            IconButton(onClick = { /* do something */ }) {
+                Icon(
+                    Icons.Filled.Search,
+                    contentDescription = "Search",
+                    tint = MaterialTheme.colorScheme.surface
+                )
+            }
             IconButton(onClick = { logoutUser() }) {
                 Icon(
                     imageVector = LogoutIcon,
