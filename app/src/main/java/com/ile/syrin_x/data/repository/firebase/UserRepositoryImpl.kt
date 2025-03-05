@@ -18,9 +18,8 @@ class UserRepositoryImpl @Inject constructor(
         userName: String,
         fullName: String,
         email: String
-    ): Flow<Response<Void?>> = flow {
-        try {
-            emit(Response.Loading)
+    ): Response<Void?> {
+        return try {
 
             val newUser = mapOf(
                 "userName" to userName,
@@ -47,10 +46,9 @@ class UserRepositoryImpl @Inject constructor(
                     }
             }
 
-            emit(Response.Success(null))
+            Response.Success(null)
         } catch (e: Exception) {
-            emit(Response.Error(e.localizedMessage ?: "Oops, something went wrong."))
+            Response.Error(e.localizedMessage ?: "Oops, something went wrong.")
         }
     }
-
 }

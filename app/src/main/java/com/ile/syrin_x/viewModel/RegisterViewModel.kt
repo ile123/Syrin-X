@@ -8,6 +8,7 @@ import com.ile.syrin_x.domain.core.Response
 import com.ile.syrin_x.domain.usecase.auth.RegisterUseCase
 import com.ile.syrin_x.domain.usecase.user.SaveUserUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
