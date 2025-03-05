@@ -1,4 +1,4 @@
-package com.ile.syrin_x.data.repository
+package com.ile.syrin_x.data.repository.firebase
 
 import com.google.firebase.auth.AuthResult
 import com.google.firebase.auth.FirebaseAuth

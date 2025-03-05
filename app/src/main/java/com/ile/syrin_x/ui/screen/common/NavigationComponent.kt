@@ -1,4 +1,4 @@
-package com.ile.syrin_x.ui.component
+package com.ile.syrin_x.ui.screen.common
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column

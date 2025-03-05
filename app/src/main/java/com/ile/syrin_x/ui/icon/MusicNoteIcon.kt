@@ -9,12 +9,12 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.unit.dp
 
-val MusicNote: ImageVector
+val MusicNoteIcon: ImageVector
     get() {
-        if (_Music_note != null) {
-            return _Music_note!!
+        if (_Music_note_icon != null) {
+            return _Music_note_icon!!
         }
-        _Music_note = ImageVector.Builder(
+        _Music_note_icon = ImageVector.Builder(
             name = "Music_note",
             defaultWidth = 24.dp,
             defaultHeight = 24.dp,
@@ -48,7 +48,7 @@ val MusicNote: ImageVector
                 reflectiveQuadToRelative(-113f, 47f)
             }
         }.build()
-        return _Music_note!!
+        return _Music_note_icon!!
     }
 
-private var _Music_note: ImageVector? = null
+private var _Music_note_icon: ImageVector? = null

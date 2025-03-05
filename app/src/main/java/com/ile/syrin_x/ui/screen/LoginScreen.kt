@@ -1,6 +1,7 @@
 package com.ile.syrin_x.ui.screen
 
 import android.util.Log
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -31,6 +32,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -42,6 +45,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.google.firebase.auth.AuthResult
+import com.ile.syrin_x.R
 import com.ile.syrin_x.domain.core.Response
 import com.ile.syrin_x.ui.navigation.NavigationGraph
 import com.ile.syrin_x.ui.screen.common.MyAlertDialog
@@ -64,6 +68,12 @@ fun LoginScreen(
             snackbarHost = { SnackbarHost(hostState = hostState) },
             modifier = Modifier.fillMaxSize()
         ) { paddingValues ->
+            Image(
+                painter = painterResource(id = R.drawable.background_image_1),
+                contentDescription = "Background image",
+                contentScale = ContentScale.FillBounds,
+                modifier = Modifier.fillMaxSize()
+            )
             Content(
                 hostState = hostState,
                 paddingValues = paddingValues,

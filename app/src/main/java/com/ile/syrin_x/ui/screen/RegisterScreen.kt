@@ -1,6 +1,7 @@
 package com.ile.syrin_x.ui.screen
 
 import android.util.Log
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -12,29 +13,31 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.Button
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.withStyle
@@ -42,15 +45,17 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import com.google.firebase.auth.AuthResult
+import com.ile.syrin_x.R
 import com.ile.syrin_x.domain.core.Response
+import com.ile.syrin_x.ui.icon.Book_icon
+import com.ile.syrin_x.ui.icon.Supervised_user_circle_icon
 import com.ile.syrin_x.ui.navigation.NavigationGraph
+import com.ile.syrin_x.ui.screen.common.MyAlertDialog
 import com.ile.syrin_x.ui.screen.common.MyCircularProgress
-import com.ile.syrin_x.ui.theme.SyrinXTheme
 import com.ile.syrin_x.viewModel.RegisterViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RegisterScreen(
     navHostController: NavHostController,
@@ -60,30 +65,25 @@ fun RegisterScreen(
     val scope = rememberCoroutineScope()
     val hostState = remember { SnackbarHostState() }
 
+    fun registerUser(userName: String, fullName: String, email: String, password: String) {
+        registerViewModel.register(userName, fullName, email, password)
+    }
+
         Scaffold(
-            modifier = Modifier.fillMaxSize(),
             snackbarHost = { SnackbarHost(hostState = hostState) },
-            topBar = {
-                TopAppBar(
-                    title = { Text(text = "Register") },
-                    navigationIcon = {
-                        IconButton(
-                            onClick = { navHostController.popBackStack() }
-                        ) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "back button"
-                            )
-                        }
-                    }
-                )
-            }
+            modifier = Modifier.fillMaxSize()
         ) { paddingValues ->
+            Image(
+                painter = painterResource(id = R.drawable.background_image_1),
+                contentDescription = "Background image",
+                contentScale = ContentScale.FillBounds,
+                modifier = Modifier.fillMaxSize()
+            )
             Content(
                 paddingValues = paddingValues,
                 registerFlowState = registerViewModel.registerFlow,
                 onNavigateToLogin = { navHostController.popBackStack() },
-                onRegister = { email, password -> registerViewModel.register(email, password) },
+                onRegister = { userName, fullName, email, password -> registerUser(userName, fullName, email, password) },
                 registerSuccess = { navHostController.navigate(NavigationGraph.HomeScreen.route) },
                 registerError = { scope.launch { hostState.showSnackbar("Oops! something went wrong, check your connection and try again") } }
             )
@@ -94,16 +94,27 @@ fun RegisterScreen(
 fun Content(
     paddingValues: PaddingValues,
     registerFlowState: MutableSharedFlow<Response<AuthResult>>,
-    onRegister: (String, String) -> Unit,
+    onRegister: (String, String, String, String) -> Unit,
     onNavigateToLogin: () -> Unit,
     registerSuccess: () -> Unit,
     registerError: () -> Unit
 ) {
+
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(paddingValues)
     ) {
+
+        val usernameText = remember {
+            mutableStateOf("")
+        }
+
+        val fullNameText = remember {
+            mutableStateOf("")
+        }
+
         val emailText = remember {
             mutableStateOf("")
         }
@@ -111,11 +122,86 @@ fun Content(
             mutableStateOf("")
         }
 
+        val repeatedPasswordText = remember {
+            mutableStateOf("")
+        }
+
+        var showFormInvalidDialog by remember {
+            mutableStateOf(false)
+        }
+
+        val register = {
+            val fields = mapOf(
+                "Username" to usernameText.value,
+                "Full Name" to fullNameText.value,
+                "Email" to emailText.value,
+                "Password" to passwordText.value,
+                "Repeated Password" to repeatedPasswordText.value
+            )
+
+            val emptyField = fields.entries.find { it.value.isEmpty() || it.value.isBlank() }
+            if (emptyField != null || passwordText.value != repeatedPasswordText.value) {
+                showFormInvalidDialog = true
+            } else {
+                onRegister(usernameText.value, fullNameText.value, emailText.value, passwordText.value)
+            }
+        }
+
+        if (showFormInvalidDialog) {
+            MyAlertDialog(
+                onDismissRequest = { showFormInvalidDialog = false },
+                onConfirmation = { showFormInvalidDialog = false },
+                title = "Invalid Form",
+                text = "Please fill in all fields correctly and make sure your passwords match.",
+                confirmButtonText = "Ok",
+                dismissButtonText = "Cancel",
+                cancelable = true
+            )
+        }
+
+        Text(
+            text = "Register",
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 25.dp, end = 20.dp, top = 20.dp),
+            style = MaterialTheme.typography.displayMedium,
+            fontWeight = FontWeight.SemiBold
+        )
+        Text(
+            text = "Please register in order to use this app.",
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 25.dp, end = 20.dp, top = 5.dp),
+            style = MaterialTheme.typography.bodyLarge
+        )
+
         TextField(
             modifier = Modifier
                 .fillMaxWidth()
                 .wrapContentHeight()
-                .padding(start = 20.dp, end = 20.dp, top = 5.dp),
+                .padding(start = 20.dp, end = 20.dp, top = 40.dp, bottom = 20.dp),
+            value = usernameText.value,
+            onValueChange = { text -> usernameText.value = text },
+            label = { Text("Username") },
+            singleLine = true,
+            leadingIcon = { Icon(Book_icon, "username") },
+        )
+        TextField(
+            modifier = Modifier
+                .fillMaxWidth()
+                .wrapContentHeight()
+                .padding(20.dp),
+            value = fullNameText.value,
+            onValueChange = { text -> fullNameText.value = text },
+            label = { Text("Full name") },
+            singleLine = true,
+            leadingIcon = { Icon(Supervised_user_circle_icon, "full_name") },
+        )
+        TextField(
+            modifier = Modifier
+                .fillMaxWidth()
+                .wrapContentHeight()
+                .padding(20.dp),
             value = emailText.value,
             onValueChange = { text -> emailText.value = text },
             label = { Text("Email") },
@@ -136,13 +222,26 @@ fun Content(
             singleLine = true,
             leadingIcon = { Icon(Icons.Filled.Lock, "password") },
         )
+        TextField(
+            modifier = Modifier
+                .fillMaxWidth()
+                .wrapContentHeight()
+                .padding(20.dp),
+            value = repeatedPasswordText.value,
+            onValueChange = { text -> repeatedPasswordText.value = text },
+            label = { Text("Repeated password") },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+            visualTransformation = PasswordVisualTransformation(),
+            singleLine = true,
+            leadingIcon = { Icon(Icons.Filled.Lock, "password") },
+        )
         Button(
-            onClick = { onRegister(emailText.value, passwordText.value) },
+            onClick = { register() },
             modifier = Modifier
                 .fillMaxWidth()
                 .wrapContentHeight()
                 .padding(start = 20.dp, end = 20.dp, top = 20.dp),
-            content = { Text(text = "Register") }
+            content = { Text(text = "Register") },
         )
         Spacer(modifier = Modifier.weight(1f))
         Text(
@@ -159,6 +258,9 @@ fun Content(
                 .clickable { onNavigateToLogin() }
         )
     }
+
+
+
     RegisterState(
         registerFlowState = registerFlowState,
         onSuccess = { registerSuccess() },
