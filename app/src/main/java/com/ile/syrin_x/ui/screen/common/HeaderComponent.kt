@@ -1,0 +1,60 @@
+package com.ile.syrin_x.ui.screen.common
+
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.*
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import androidx.navigation.NavHostController
+import com.ile.syrin_x.ui.icon.LogoutIcon
+import com.ile.syrin_x.ui.navigation.NavigationGraph
+import com.ile.syrin_x.viewModel.HeaderViewModel
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun HeaderComponent(
+    navHostController: NavHostController,
+    headerViewModel: HeaderViewModel
+) {
+
+    fun logoutUser() {
+        headerViewModel.logout()
+        navHostController.navigate(NavigationGraph.LoginScreen.route) {
+            popUpTo(NavigationGraph.LoginScreen.route) {
+                inclusive = true
+            }
+        }
+    }
+
+    TopAppBar(
+        title = {
+            Text(text = "Home",
+                color = MaterialTheme.colorScheme.surface
+            )
+        },
+        modifier = Modifier.padding(top = 16.dp),
+        windowInsets = WindowInsets(0.dp, 0.dp, 0.dp, 0.dp),
+        colors = TopAppBarDefaults
+            .topAppBarColors(containerColor = MaterialTheme.colorScheme.primary),
+        actions = {
+            IconButton(onClick = { /* do something */ }) {
+                Icon(
+                    Icons.Filled.Search,
+                    contentDescription = "Search",
+                    tint = MaterialTheme.colorScheme.surface
+                )
+            }
+            IconButton(onClick = { logoutUser() }) {
+                Icon(
+                    imageVector = LogoutIcon,
+                    contentDescription = "Logout",
+                    tint = MaterialTheme.colorScheme.surface
+                )
+            }
+        },
+    )
+}
