@@ -16,4 +16,7 @@ interface SoundCloudDao {
 
     @Query("DELETE FROM soundcloudusertoken WHERE userId = :userId")
     suspend fun deleteToken(userId: String)
+
+    @Query("UPDATE soundcloudusertoken SET accessToken = :accessToken, refreshToken = :refreshToken, expiresAt = :expiresIn WHERE userId = :userId")
+    suspend fun updateToken(userId: String, accessToken: String, refreshToken: String?, expiresIn: Long)
 }

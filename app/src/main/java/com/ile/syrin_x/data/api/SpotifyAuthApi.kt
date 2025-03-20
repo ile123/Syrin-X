@@ -8,6 +8,7 @@ import retrofit2.http.Header
 import retrofit2.http.POST
 
 interface SpotifyAuthApi {
+    @FormUrlEncoded
     @POST("api/token")
     suspend fun getToken(
         @Header("Authorization") authorization: String,
@@ -15,23 +16,13 @@ interface SpotifyAuthApi {
         @Field("code") code: String,
         @Field("redirect_uri") redirectUri: String
     ): Response<AccessTokenResponse>
-    /*@FormUrlEncoded
-    @POST("api/token")
-    suspend fun getAccessToken(
-        @Field("grant_type") grantType: String,
-        @Field("code") code: String,
-        @Field("redirect_uri") redirectUri: String,
-        @Field("client_id") clientId: String,
-        @Field("code_verifier") codeVerifier: String
-    ): Response<AccessTokenResponse>
 
     @POST("api/token")
     @FormUrlEncoded
-    fun refreshToken(
+    suspend fun refreshToken(
         @Field("grant_type") grantType: String = "refresh_token",
-        @Field("refresh_token") refreshToken: String,
+        @Field("refresh_token") refreshToken: String?,
         @Field("client_id") clientId: String,
-        @Field("client_secret") clientSecret: String
-    ): Response<AccessTokenResponse>*/
+    ): Response<AccessTokenResponse>
 }
 

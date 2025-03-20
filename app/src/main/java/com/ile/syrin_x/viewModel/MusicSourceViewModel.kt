@@ -1,15 +1,17 @@
 package com.ile.syrin_x.viewModel
 
 import android.util.Base64
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
+import android.util.Log
+import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ile.syrin_x.data.model.SoundCloudUserToken
 import com.ile.syrin_x.data.model.SpotifyUserToken
 import com.ile.syrin_x.domain.usecase.auth.GetUserUidUseCase
-import com.ile.syrin_x.domain.usecase.musicsource.soundcloud.SoundCloudLoginUseCase
-import com.ile.syrin_x.domain.usecase.musicsource.spotify.SpotifyLoginUseCase
+import com.ile.syrin_x.domain.usecase.musicsource.soundcloud.ExchangeSoundCloudCodeForTokenUseCase
+import com.ile.syrin_x.domain.usecase.musicsource.soundcloud.GetSoundCloudUserTokenUseCase
+import com.ile.syrin_x.domain.usecase.musicsource.spotify.ExchangeSpotifyCodeForTokenUseCase
+import com.ile.syrin_x.domain.usecase.musicsource.spotify.GetSpotifyUserTokenUseCase
 import com.ile.syrin_x.utils.EnvLoader
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
@@ -18,24 +20,25 @@ import javax.inject.Inject
 @HiltViewModel
 class MusicSourceViewModel @Inject constructor(
     private val getUserUidUseCase: GetUserUidUseCase,
-    private val spotifyLoginUseCase: SpotifyLoginUseCase,
-    private val soundCloudLoginUseCase: SoundCloudLoginUseCase
-): ViewModel() {
-    private val _spotifyToken = MutableLiveData<SpotifyUserToken>()
-    val spotifyToken: LiveData<SpotifyUserToken> get() = _spotifyToken
+    private val exchangeSpotifyCodeForTokenUseCase: ExchangeSpotifyCodeForTokenUseCase,
+    private val exchangeSoundCloudCodeForTokenUseCase: ExchangeSoundCloudCodeForTokenUseCase,
+    private val spotifyGetUserTokenUseCase: GetSpotifyUserTokenUseCase,
+    private val getSoundCloudUserTokenUseCase: GetSoundCloudUserTokenUseCase
 
-    private val _soundCloudToken = MutableLiveData<SoundCloudUserToken>()
-    val soundCloudToken: LiveData<SoundCloudUserToken> get() = _soundCloudToken
+): ViewModel() {
+
+    val spotifyUserToken = mutableStateOf<SpotifyUserToken?>(null)
+    val soundCloudUserToken = mutableStateOf<SoundCloudUserToken?>(null)
 
     fun loginSpotify(code: String, redirectUri: String) {
         val authHeader = generateAuthHeader(EnvLoader.spotifyClientId, EnvLoader.spotifyClientSecret)
         viewModelScope.launch {
             getUserUidUseCase.invoke().collect { userUuid ->
                 try {
-                    val token = spotifyLoginUseCase(userUuid, authHeader, code, redirectUri)
-                    _spotifyToken.value = token
+                    val token = exchangeSpotifyCodeForTokenUseCase(userUuid, authHeader, code, redirectUri)
+                    spotifyUserToken.value = token
                 } catch (e: Exception) {
-                    // Handle error
+                    Log.d("Login Error:", e.message.toString())
                 }
             }
         }
@@ -45,10 +48,42 @@ class MusicSourceViewModel @Inject constructor(
         viewModelScope.launch {
             getUserUidUseCase.invoke().collect { userUuid ->
                 try {
-                    val token = soundCloudLoginUseCase(userUuid, EnvLoader.soundCloudClientId, EnvLoader.soundCloudClientSecret, code, redirectUri)
-                    _soundCloudToken.value = token
+                    val token = exchangeSoundCloudCodeForTokenUseCase(userUuid, EnvLoader.soundCloudClientId, EnvLoader.soundCloudClientSecret, code, redirectUri)
+                    soundCloudUserToken.value = token
                 } catch (e: Exception) {
-                    // Handle error
+                    Log.d("Login Error:", e.message.toString())
+                }
+            }
+        }
+    }
+
+    fun getUserSpotifyToken() {
+        viewModelScope.launch {
+            if(spotifyUserToken.value == null) {
+                getUserUidUseCase.invoke().collect { userUuid ->
+                    try {
+                        val token = spotifyGetUserTokenUseCase(userUuid)
+                        Log.d("Token", token.toString())
+                        spotifyUserToken.value = token
+
+                    } catch (e: Exception) {
+                        Log.d("Token fetching error:", e.message.toString())
+                    }
+                }
+            }
+        }
+    }
+
+    fun getUserSoundCloudToken() {
+        viewModelScope.launch {
+            if(soundCloudUserToken.value == null) {
+                getUserUidUseCase.invoke().collect { userUuid ->
+                    try {
+                        val token = getSoundCloudUserTokenUseCase(userUuid)
+                        soundCloudUserToken.value = token
+                    } catch (e: Exception) {
+                        Log.d("Token fetching error:", e.message.toString())
+                    }
                 }
             }
         }
