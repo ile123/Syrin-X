@@ -1,9 +1,7 @@
 package com.ile.syrin_x.ui.navigation
 
-import android.net.Uri
 import androidx.compose.runtime.Composable
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.LiveData
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -16,9 +14,9 @@ import com.ile.syrin_x.ui.screen.RegisterScreen
 @Composable
 fun SetUpNavigationGraph(
     navHostController: NavHostController = rememberNavController(),
-    authenticationNavigationViewModel: AuthenticationNavigationViewModel = hiltViewModel(),
-    intentData: LiveData<Uri?>? = null
+    authenticationNavigationViewModel: AuthenticationNavigationViewModel = hiltViewModel()
 ) {
+
     NavHost(
         navController = navHostController,
         startDestination = if (authenticationNavigationViewModel.isLoggedInState.value)
@@ -44,9 +42,7 @@ fun SetUpNavigationGraph(
         composable(
             route = NavigationGraph.MusicSourceScreen.route
         ) {
-            if (intentData != null) {
-                MusicSourceScreen(navHostController, intentData)
-            }
+            MusicSourceScreen()
         }
     }
 }

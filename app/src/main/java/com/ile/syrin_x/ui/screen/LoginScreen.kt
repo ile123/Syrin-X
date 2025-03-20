@@ -1,5 +1,6 @@
 package com.ile.syrin_x.ui.screen
 
+import android.Manifest
 import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable

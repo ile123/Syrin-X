@@ -16,4 +16,7 @@ interface SpotifyDao {
 
     @Query("DELETE FROM spotifyusertoken WHERE userId = :userId")
     suspend fun deleteUser(userId: String)
+
+    @Query("UPDATE spotifyusertoken SET accessToken = :accessToken, expiresAt = :expiresIn WHERE userId = :userId")
+    suspend fun updateToken(userId: String, accessToken: String, expiresIn: Long)
 }

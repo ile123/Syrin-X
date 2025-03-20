@@ -10,6 +10,7 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import java.util.concurrent.Executors
 import javax.inject.Singleton
 
 @Module
@@ -22,7 +23,10 @@ object DatabaseModule {
         return Room.databaseBuilder(
             context,
             AppDatabase::class.java, "syrinx_db"
-        ).build()
+        )
+            .setQueryExecutor(Executors.newSingleThreadExecutor())
+            .setTransactionExecutor(Executors.newFixedThreadPool(2))
+            .build()
     }
 
     @Provides

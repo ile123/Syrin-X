@@ -2,8 +2,8 @@ package com.ile.syrin_x.di
 
 import com.ile.syrin_x.data.api.SoundCloudAuthApi
 import com.ile.syrin_x.data.database.SoundCloudDao
-import com.ile.syrin_x.data.repository.musicsource.SoundCloudRepositoryImpl
-import com.ile.syrin_x.domain.repository.SoundCloudRepository
+import com.ile.syrin_x.data.repository.musicsource.SoundCloudAuthRepositoryImpl
+import com.ile.syrin_x.domain.repository.SoundCloudAuthRepository
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -16,8 +16,8 @@ object SoundCloudModule {
 
     @Provides
     @Singleton
-    fun provideSoundCloudRepository(
+    fun provideSoundCloudAuthRepository(
         api: SoundCloudAuthApi,
         dao: SoundCloudDao
-    ): SoundCloudRepository = SoundCloudRepositoryImpl(api, dao)
+    ): SoundCloudAuthRepository = SoundCloudAuthRepositoryImpl(api, dao)
 }

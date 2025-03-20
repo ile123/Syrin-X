@@ -9,6 +9,7 @@ import retrofit2.http.FormUrlEncoded
 import retrofit2.http.POST
 
 interface SoundCloudAuthApi {
+    @FormUrlEncoded
     @POST("oauth2/token")
     suspend fun getToken(
         @Field("client_id") clientId: String,
@@ -18,4 +19,12 @@ interface SoundCloudAuthApi {
         @Field("code") code: String
     ): Response<AccessTokenResponse>
 
+    @POST("oauth2/token")
+    @FormUrlEncoded
+    suspend fun refreshToken(
+        @Field("grant_type") grantType: String = "refresh_token",
+        @Field("refresh_token") refreshToken: String?,
+        @Field("client_id") clientId: String,
+        @Field("client_secret") clientSecret: String
+    ): Response<AccessTokenResponse>
 }
