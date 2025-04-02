@@ -1,10 +1,10 @@
-package com.ile.syrin_x.data.model
+package com.ile.syrin_x.data.model.spotify
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
 @Entity
-data class SoundCloudUserToken(
+data class SpotifyUserToken(
     @PrimaryKey val userId: String,
     val accessToken: String,
     val refreshToken: String?,

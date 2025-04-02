@@ -56,6 +56,7 @@ dependencies {
     implementation(libs.firebase.firestore.ktx)
     implementation(libs.firebase.crashlytics.buildtools)
     implementation(libs.androidx.runtime.livedata)
+    implementation(files("../spotify-app-remote-release-0.8.0.aar"))
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

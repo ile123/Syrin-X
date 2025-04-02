@@ -3,9 +3,11 @@ package com.ile.syrin_x.data.repository.musicsource
 import android.util.Log
 import com.ile.syrin_x.data.api.SpotifyAuthApi
 import com.ile.syrin_x.data.database.SpotifyDao
-import com.ile.syrin_x.data.model.SpotifyUserToken
+import com.ile.syrin_x.data.model.spotify.SpotifyUserToken
 import com.ile.syrin_x.domain.repository.SpotifyAuthRepository
 import com.ile.syrin_x.utils.EnvLoader
+import com.ile.syrin_x.utils.GlobalContext
+import com.ile.syrin_x.utils.createBae64CredentialsForAuthorizationFlow
 import jakarta.inject.Inject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -32,6 +34,8 @@ class SpotifyAuthRepositoryImpl @Inject constructor(
                             )
                             dao.insertToken(spotifyAuthToken)
                             Log.d("Spotify Login", "Spotify token saved.")
+                            GlobalContext.Tokens.spotifyToken = token.accessToken
+                            GlobalContext.loggedInMusicSources.add("Spotify")
                             return@withContext spotifyAuthToken
                         }
                     }
@@ -50,11 +54,13 @@ class SpotifyAuthRepositoryImpl @Inject constructor(
     override suspend fun refreshSpotifyAccessToken(userUuid: String, refreshToken: String?) {
         return withContext(Dispatchers.IO) {
             try {
-                    val response = api.refreshToken("refresh_token", refreshToken, EnvLoader.spotifyClientId)
+                    val credentials = createBae64CredentialsForAuthorizationFlow(EnvLoader.spotifyClientId, EnvLoader.spotifyClientSecret)
+                    val response = api.refreshToken(credentials,"refresh_token", refreshToken)
                     if (response.isSuccessful) {
                         response.body()?.let { token ->
                             dao.updateToken(userUuid, token.accessToken, token.expiresIn)
                             Log.d("Spotify Token Refresh", "SoundCloud token was refreshed and saved.")
+                            GlobalContext.Tokens.spotifyToken = token.accessToken
                         }
                 }
             } catch (e: Exception) {

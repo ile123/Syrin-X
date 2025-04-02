@@ -41,7 +41,7 @@ fun HeaderComponent(
         colors = TopAppBarDefaults
             .topAppBarColors(containerColor = MaterialTheme.colorScheme.primary),
         actions = {
-            IconButton(onClick = { /* do something */ }) {
+            IconButton(onClick = { navHostController.navigate(NavigationGraph.SearchScreen.route) }) {
                 Icon(
                     Icons.Filled.Search,
                     contentDescription = "Search",

@@ -10,6 +10,8 @@ import com.ile.syrin_x.ui.screen.HomeScreen
 import com.ile.syrin_x.ui.screen.LoginScreen
 import com.ile.syrin_x.ui.screen.MusicSourceScreen
 import com.ile.syrin_x.ui.screen.RegisterScreen
+import com.ile.syrin_x.ui.screen.SearchResultScreen
+import com.ile.syrin_x.ui.screen.SearchScreen
 
 @Composable
 fun SetUpNavigationGraph(
@@ -43,6 +45,16 @@ fun SetUpNavigationGraph(
             route = NavigationGraph.MusicSourceScreen.route
         ) {
             MusicSourceScreen()
+        }
+        composable(
+            route = NavigationGraph.SearchScreen.route
+        ) {
+            SearchScreen(navHostController)
+        }
+        composable(
+            route = NavigationGraph.SearchResultScreen.route
+        ) {
+            SearchResultScreen(navHostController)
         }
     }
 }

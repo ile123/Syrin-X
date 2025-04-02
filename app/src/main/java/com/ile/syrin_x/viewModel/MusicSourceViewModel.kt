@@ -5,8 +5,8 @@ import android.util.Log
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.ile.syrin_x.data.model.SoundCloudUserToken
-import com.ile.syrin_x.data.model.SpotifyUserToken
+import com.ile.syrin_x.data.model.soundcloud.SoundCloudUserToken
+import com.ile.syrin_x.data.model.spotify.SpotifyUserToken
 import com.ile.syrin_x.domain.usecase.auth.GetUserUidUseCase
 import com.ile.syrin_x.domain.usecase.musicsource.soundcloud.ExchangeSoundCloudCodeForTokenUseCase
 import com.ile.syrin_x.domain.usecase.musicsource.soundcloud.GetSoundCloudUserTokenUseCase
