@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
@@ -31,11 +32,13 @@ import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -46,6 +49,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
+import coil3.compose.AsyncImage
 import com.ile.syrin_x.R
 import com.ile.syrin_x.data.enums.MusicCategory
 import com.ile.syrin_x.data.enums.MusicSource
@@ -54,9 +58,7 @@ import com.ile.syrin_x.data.model.UnifiedTrack
 import com.ile.syrin_x.data.model.UnifiedUser
 import com.ile.syrin_x.data.model.spotify.SpotifyAlbum
 import com.ile.syrin_x.domain.core.Response
-import com.ile.syrin_x.ui.screen.common.GlideImage
 import com.ile.syrin_x.ui.screen.common.MyCircularProgress
-import com.ile.syrin_x.utils.GlobalContext
 import com.ile.syrin_x.viewModel.SearchViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch
@@ -69,6 +71,15 @@ fun SearchResultScreen(
 ) {
     val scope = rememberCoroutineScope()
     val hostState = remember { SnackbarHostState() }
+
+    fun searchByMusicCategory(musicCategory: MusicCategory) {
+        when(musicCategory) {
+            MusicCategory.TRACKS -> searchViewModel.fetchMoreTracksForInfiniteScroll()
+            MusicCategory.PLAYLISTS -> searchViewModel.fetchMorePlaylistsForInfiniteScroll()
+            MusicCategory.ALBUMS -> searchViewModel.fetchMoreAlbumsForInfiniteScroll()
+            MusicCategory.USERS -> searchViewModel.fetchMoreUsersForInfiniteScroll()
+        }
+    }
 
     Scaffold(
         snackbarHost = { SnackbarHost(hostState = hostState) },
@@ -84,14 +95,15 @@ fun SearchResultScreen(
         Content(
             paddingValues = paddingValues,
             searchFlowState = searchViewModel.searchFlow,
-            onEndOfListHit = {  },
+            onEndOfListHit = { musicCategory -> searchByMusicCategory(musicCategory) },
             searchSuccess = {  },
             searchError = { errorMessage ->
                 scope.launch {
                     hostState.showSnackbar(errorMessage)
                 }
             },
-            searchViewModel = searchViewModel
+            searchViewModel = searchViewModel,
+            navHostController = navHostController
         )
     }
 }
@@ -100,21 +112,62 @@ fun SearchResultScreen(
 fun Content(
     paddingValues: PaddingValues,
     searchFlowState: MutableSharedFlow<Response<Any>>,
-    onEndOfListHit: () -> Unit,
+    onEndOfListHit: (MusicCategory) -> Unit,
     searchSuccess: () -> Unit,
     searchError: (error: String) -> Unit,
-    searchViewModel: SearchViewModel
+    searchViewModel: SearchViewModel,
+    navHostController: NavHostController
 ) {
+    val tracksLazyListState = rememberLazyListState()
+    val playlistsLazyListState = rememberLazyListState()
+    val albumsLazyListState = rememberLazyListState()
+    val usersLazyListState = rememberLazyListState()
+
+    LaunchedEffect(tracksLazyListState) {
+        snapshotFlow { tracksLazyListState.layoutInfo.visibleItemsInfo.lastOrNull()?.index }
+            .collect { lastVisibleItemIndex ->
+                if (lastVisibleItemIndex == searchViewModel.searchedTracks.size - 1) {
+                    onEndOfListHit(MusicCategory.TRACKS)
+                }
+            }
+    }
+
+    LaunchedEffect(playlistsLazyListState) {
+        snapshotFlow { playlistsLazyListState.layoutInfo.visibleItemsInfo.lastOrNull()?.index }
+            .collect { lastVisibleItemIndex ->
+                if (lastVisibleItemIndex == searchViewModel.searchedPlaylists.size - 1) {
+                    onEndOfListHit(MusicCategory.PLAYLISTS)
+                }
+            }
+    }
+
+    LaunchedEffect(albumsLazyListState) {
+        snapshotFlow { albumsLazyListState.layoutInfo.visibleItemsInfo.lastOrNull()?.index }
+            .collect { lastVisibleItemIndex ->
+                if (lastVisibleItemIndex == searchViewModel.searchedAlbums.size - 1) {
+                    onEndOfListHit(MusicCategory.ALBUMS)
+                }
+            }
+    }
+
+    LaunchedEffect(usersLazyListState) {
+        snapshotFlow { usersLazyListState.layoutInfo.visibleItemsInfo.lastOrNull()?.index }
+            .collect { lastVisibleItemIndex ->
+                if (lastVisibleItemIndex == searchViewModel.searchedUsers.size - 1) {
+                    onEndOfListHit(MusicCategory.USERS)
+                }
+            }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(paddingValues)
     ) {
-
         var selectedCategory by remember { mutableStateOf(MusicCategory.TRACKS) }
 
         MusicCategoryTabs(
-            musicSource = GlobalContext.musicSource,
+            musicSource = searchViewModel.searchedMusicSource,
             selectedCategory = selectedCategory,
             onCategorySelected = { selectedCategory = it }
         )
@@ -123,24 +176,24 @@ fun Content(
 
         when (selectedCategory) {
             MusicCategory.TRACKS -> {
-                LazyColumn {
-                    items(searchViewModel.searchedTracks) { track ->
-                        UnifiedTrackRow(track = track)
+                LazyColumn(state = tracksLazyListState) {
+                    items(searchViewModel.searchedTracks, key = { item -> "${item.id}-${MusicCategory.TRACKS}" }) { track ->
+                        UnifiedTrackRow(track = track, searchViewModel.searchedMusicSource, navHostController)
                     }
                 }
             }
             MusicCategory.PLAYLISTS -> {
-                LazyColumn {
-                    items(searchViewModel.searchedPlaylists) { playlist ->
-                        UnifiedPlaylistRow(playlist = playlist)
+                LazyColumn(state = playlistsLazyListState) {
+                    items(searchViewModel.searchedPlaylists, key = { item -> "${item.id}-${MusicCategory.PLAYLISTS}" }) { playlist ->
+                        UnifiedPlaylistRow(playlist = playlist, searchViewModel.searchedMusicSource, navHostController)
                     }
                 }
             }
             MusicCategory.ALBUMS -> {
-                if (GlobalContext.musicSource == MusicSource.SPOTIFY) {
-                    LazyColumn {
-                        items(searchViewModel.searchedAlbums) { album ->
-                            UnifiedAlbumRow(album = album)
+                if (searchViewModel.searchedMusicSource == MusicSource.SPOTIFY) {
+                    LazyColumn(state = albumsLazyListState) {
+                        items(searchViewModel.searchedAlbums, key = { item -> "${item.id}-${MusicCategory.ALBUMS}" }) { album ->
+                            UnifiedAlbumRow(album = album, searchViewModel.searchedMusicSource, navHostController)
                         }
                     }
                 } else {
@@ -156,9 +209,9 @@ fun Content(
                 }
             }
             MusicCategory.USERS -> {
-                LazyColumn {
-                    items(searchViewModel.searchedUsers) { user ->
-                        UnifiedUserRow(user = user)
+                LazyColumn(state = usersLazyListState) {
+                    items(searchViewModel.searchedUsers, key = { item -> "${item.id}-${MusicCategory.USERS}" }) { user ->
+                        UnifiedUserRow(user = user, searchViewModel.searchedMusicSource, navHostController)
                     }
                 }
             }
@@ -171,6 +224,7 @@ fun Content(
         onError = { error -> searchError(error) }
     )
 }
+
 
 @Composable
 fun SearchResultState(
@@ -212,18 +266,19 @@ fun formatDuration(durationMs: Int): String {
 @Composable
 fun UnifiedTrackRow(
     track: UnifiedTrack,
+    musicSource: MusicSource,
+    navHostController: NavHostController,
     modifier: Modifier = Modifier,
-    onClick: () -> Unit = {}
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .clickable(onClick = { navHostController.navigate("track_details_screen/${track.id}/${musicSource.name}") })
             .padding(8.dp)
     ) {
-        GlideImage(
-            url = track.artworkUrl,
+        AsyncImage(
+            model = track.artworkUrl,
             contentDescription = "${track.title} artwork",
             modifier = Modifier
                 .size(56.dp)
@@ -261,19 +316,20 @@ fun UnifiedTrackRow(
 @Composable
 fun UnifiedAlbumRow(
     album: SpotifyAlbum,
-    modifier: Modifier = Modifier,
-    onClick: () -> Unit = {}
+    musicSource: MusicSource,
+    navHostController: NavHostController,
+    modifier: Modifier = Modifier
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .clickable(onClick = { navHostController.navigate("album_details_screen/${album.id}/${musicSource.name}") })
             .padding(8.dp)
     ) {
         val imageUrl = album.images?.firstOrNull()?.url
-        GlideImage(
-            url = imageUrl,
+        AsyncImage(
+            model = imageUrl,
             contentDescription = "${album.name} album artwork",
             modifier = Modifier
                 .size(64.dp)
@@ -288,7 +344,7 @@ fun UnifiedAlbumRow(
             Text(
                 text = album.artists?.get(0)?.name ?: "Unknown Artist",
                 style = MaterialTheme.typography.bodyMedium,
-                color = Color.Gray
+                color = Color.Magenta
             )
         }
     }
@@ -297,19 +353,20 @@ fun UnifiedAlbumRow(
 @Composable
 fun UnifiedPlaylistRow(
     playlist: UnifiedPlaylist,
-    modifier: Modifier = Modifier,
-    onClick: () -> Unit = {}
+    musicSource: MusicSource,
+    navHostController: NavHostController,
+    modifier: Modifier = Modifier
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .clickable(onClick = { navHostController.navigate("playlist_details_screen/${playlist.id}/${musicSource.name}") })
             .padding(8.dp)
     ) {
         val imageUrl = playlist.images?.firstOrNull()?.url
-        GlideImage(
-            url = imageUrl,
+        AsyncImage(
+            model = imageUrl,
             contentDescription = "${playlist.name} playlist image",
             modifier = Modifier
                 .size(56.dp)
@@ -337,6 +394,8 @@ fun UnifiedPlaylistRow(
 @Composable
 fun UnifiedUserRow(
     user: UnifiedUser,
+    musicSource: MusicSource,
+    navHostController: NavHostController,
     modifier: Modifier = Modifier,
     onClick: () -> Unit = {}
 ) {
@@ -347,8 +406,8 @@ fun UnifiedUserRow(
             .clickable(onClick = onClick)
             .padding(8.dp)
     ) {
-        GlideImage(
-            url = user.avatarUrl,
+        AsyncImage(
+            model = user.avatarUrl,
             contentDescription = "${user.name} avatar",
             modifier = Modifier
                 .size(48.dp)
@@ -389,7 +448,7 @@ fun MusicCategoryTabs(
             MusicCategory.PLAYLISTS,
             MusicCategory.USERS
         )
-        MusicSource.NONE -> emptyList()
+        MusicSource.NOT_SPECIFIED -> emptyList()
     }
 
     if (categories.isEmpty()) {

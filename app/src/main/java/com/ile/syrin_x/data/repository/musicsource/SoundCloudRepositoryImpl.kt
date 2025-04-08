@@ -61,4 +61,28 @@ class SoundCloudRepositoryImpl @Inject constructor(
             emit(Response.Error(e.message.toString()))
         }
     }
+
+    override suspend fun searchTrackById(id: String, accessToken: String): Flow<Response<Any>> = flow {
+        try {
+            emit(Response.Loading)
+            val authorization = "OAuth $accessToken"
+            val result = api.getTrackById(authorization, id)
+            emit(Response.Success(result))
+        } catch (e: Exception) {
+            Log.d("SoundCloud Search Error", e.message.toString())
+            emit(Response.Error(e.message.toString()))
+        }
+    }
+
+    override suspend fun searchPlaylistById(id: String, accessToken: String): Flow<Response<Any>> = flow {
+        try {
+            emit(Response.Loading)
+            val authorization = "OAuth $accessToken"
+            val result = api.getPlaylistById(authorization, id)
+            emit(Response.Success(result))
+        } catch (e: Exception) {
+            Log.d("SoundCloud Search Error", e.message.toString())
+            emit(Response.Error(e.message.toString()))
+        }
+    }
 }

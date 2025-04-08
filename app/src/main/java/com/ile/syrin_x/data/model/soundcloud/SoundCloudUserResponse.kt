@@ -1,10 +1,14 @@
 package com.ile.syrin_x.data.model.soundcloud
 
+import androidx.compose.runtime.Immutable
+
+@Immutable
 data class SoundCloudUserResponse(
     val collection: List<SoundCloudUser>,
     val next_href: String?
 )
 
+@Immutable
 data class SoundCloudUser(
     val avatar_url: String?,
     val id: Long,
@@ -38,10 +42,12 @@ data class SoundCloudUser(
     val subscriptions: List<SoundCloudUserSubscription>?
 )
 
+@Immutable
 data class SoundCloudUserSubscription(
     val product: SoundCloudUserProduct
 )
 
+@Immutable
 data class SoundCloudUserProduct(
     val id: String,
     val name: String

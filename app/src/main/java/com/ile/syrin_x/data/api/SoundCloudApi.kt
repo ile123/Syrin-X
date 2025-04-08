@@ -3,11 +3,15 @@ package com.ile.syrin_x.data.api
 import com.ile.syrin_x.data.model.soundcloud.SoundCloudBpm
 import com.ile.syrin_x.data.model.soundcloud.SoundCloudCreatedAt
 import com.ile.syrin_x.data.model.soundcloud.SoundCloudDuration
+import com.ile.syrin_x.data.model.soundcloud.SoundCloudPlaylistById
 import com.ile.syrin_x.data.model.soundcloud.SoundCloudPlaylistResponse
+import com.ile.syrin_x.data.model.soundcloud.SoundCloudTrackById
 import com.ile.syrin_x.data.model.soundcloud.SoundCloudTrackResponse
 import com.ile.syrin_x.data.model.soundcloud.SoundCloudUserResponse
+import retrofit2.http.Field
 import retrofit2.http.GET
 import retrofit2.http.Header
+import retrofit2.http.Path
 import retrofit2.http.Query
 
 interface SoundCloudApi {
@@ -46,4 +50,16 @@ interface SoundCloudApi {
         @Query("offset") offset: Long,
         @Query("linked_partitioning") linkedPartitioning: Boolean
     ): SoundCloudUserResponse
+
+    @GET("tracks/{id}")
+    suspend fun getTrackById(
+        @Header("Authorization") authorization: String,
+        @Path("id") id: String
+    ): SoundCloudTrackById
+
+    @GET("playlists/{id}")
+    suspend fun getPlaylistById(
+        @Header("Authorization") authorization: String,
+        @Path("id") id: String
+    ): SoundCloudPlaylistById
 }

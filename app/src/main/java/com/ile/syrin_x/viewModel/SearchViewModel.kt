@@ -1,22 +1,15 @@
 package com.ile.syrin_x.viewModel
 
 import android.util.Log
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ile.syrin_x.data.enums.MusicSource
 import com.ile.syrin_x.data.model.UnifiedPlaylist
 import com.ile.syrin_x.data.model.UnifiedTrack
 import com.ile.syrin_x.data.model.UnifiedUser
-import com.ile.syrin_x.data.model.soundcloud.SoundCloudPlaylist
 import com.ile.syrin_x.data.model.soundcloud.SoundCloudPlaylistResponse
-import com.ile.syrin_x.data.model.soundcloud.SoundCloudPlaylistTrack
-import com.ile.syrin_x.data.model.soundcloud.SoundCloudTrack
 import com.ile.syrin_x.data.model.soundcloud.SoundCloudTrackResponse
-import com.ile.syrin_x.data.model.soundcloud.SoundCloudUser
 import com.ile.syrin_x.data.model.soundcloud.SoundCloudUserResponse
 import com.ile.syrin_x.data.model.spotify.SpotifyAlbum
 import com.ile.syrin_x.data.model.spotify.SpotifyResponse
@@ -24,7 +17,10 @@ import com.ile.syrin_x.domain.core.Response
 import com.ile.syrin_x.domain.usecase.musicsource.soundcloud.SearchPlaylistsSoundCloudUseCase
 import com.ile.syrin_x.domain.usecase.musicsource.soundcloud.SearchTracksSoundCloudUseCase
 import com.ile.syrin_x.domain.usecase.musicsource.soundcloud.SearchUsersSoundCloudUseCase
+import com.ile.syrin_x.domain.usecase.musicsource.spotify.SearchAlbumsSpotifyUseCase
 import com.ile.syrin_x.domain.usecase.musicsource.spotify.SearchAllSpotifyUseCase
+import com.ile.syrin_x.domain.usecase.musicsource.spotify.SearchPlaylistsSpotifyUseCase
+import com.ile.syrin_x.domain.usecase.musicsource.spotify.SearchTracksSpotifyUseCase
 import com.ile.syrin_x.utils.GlobalContext
 import com.ile.syrin_x.utils.toSoundCloudUnifiedPlaylists
 import com.ile.syrin_x.utils.toSoundCloudUnifiedTracks
@@ -41,6 +37,10 @@ import javax.inject.Inject
 @HiltViewModel
 class SearchViewModel @Inject constructor(
     private val searchAllSpotifyUseCase: SearchAllSpotifyUseCase,
+    private val searchTracksSpotifyUseCase: SearchTracksSpotifyUseCase,
+    private val searchAlbumsSpotifyUseCase: SearchAlbumsSpotifyUseCase,
+    private val searchPlaylistsSpotifyUseCase: SearchPlaylistsSpotifyUseCase,
+    private val searchUsersSpotifyUseCase: SearchAlbumsSpotifyUseCase,
     private val searchTracksSoundCloudUseCase: SearchTracksSoundCloudUseCase,
     private val searchPlaylistsSoundCloudUseCase: SearchPlaylistsSoundCloudUseCase,
     private val searchUsersSoundCloudUseCase: SearchUsersSoundCloudUseCase
@@ -56,10 +56,14 @@ class SearchViewModel @Inject constructor(
         "users" to 0
     )
 
-    val searchedTracks: MutableList<UnifiedTrack> = mutableListOf()
-    val searchedPlaylists: MutableList<UnifiedPlaylist> = mutableListOf()
-    val searchedAlbums: MutableList<SpotifyAlbum> = mutableListOf()
-    val searchedUsers: MutableList<UnifiedUser> = mutableListOf()
+    val searchedTracks = mutableStateListOf<UnifiedTrack>()
+    val searchedPlaylists = mutableStateListOf<UnifiedPlaylist>()
+    val searchedAlbums = mutableStateListOf<SpotifyAlbum>()
+    val searchedUsers = mutableStateListOf<UnifiedUser>()
+
+    var searchedMusicSource = MusicSource.NOT_SPECIFIED
+
+    private var searchedKeyword = ""
 
     fun clearPreviouslyFetchedContent() {
         searchedTracks.clear()
@@ -72,7 +76,8 @@ class SearchViewModel @Inject constructor(
         clearPreviouslyFetchedContent()
         when (musicSource) {
             "Spotify" -> {
-                GlobalContext.musicSource = MusicSource.SPOTIFY
+                searchedMusicSource = MusicSource.SPOTIFY
+                searchedKeyword = keyword
                 searchAllSpotifyUseCase(
                     keyword,
                     GlobalContext.Tokens.spotifyToken
@@ -100,11 +105,12 @@ class SearchViewModel @Inject constructor(
             }
             "SoundCloud" -> {
                 val accessToken = GlobalContext.Tokens.soundCloudToken
-                GlobalContext.musicSource = MusicSource.SOUNDCLOUD
+                searchedMusicSource = MusicSource.SOUNDCLOUD
+                searchedKeyword = keyword
                 combine(
-                    searchTracksSoundCloudUseCase(keyword, 10, 0, accessToken),
-                    searchUsersSoundCloudUseCase(keyword, 10, 0, accessToken),
-                    searchPlaylistsSoundCloudUseCase(keyword, 10, 0, accessToken)
+                    searchTracksSoundCloudUseCase(keyword, 50, 0, accessToken),
+                    searchUsersSoundCloudUseCase(keyword, 50, 0, accessToken),
+                    searchPlaylistsSoundCloudUseCase(keyword, 50, 0, accessToken)
                 ) { tracks, users, playlists ->
                     when {
                         tracks is Response.Success<*> &&
@@ -118,7 +124,6 @@ class SearchViewModel @Inject constructor(
 
                             val playlistResponse = playlists.data as? SoundCloudPlaylistResponse
                             searchedPlaylists.addAll(playlistResponse?.collection?.toSoundCloudUnifiedPlaylists() ?: emptyList())
-
                             Response.Success(true)
                         }
                         tracks is Response.Error -> tracks
@@ -134,19 +139,224 @@ class SearchViewModel @Inject constructor(
         }
     }
 
-    fun searchTracks(keyword: String, limit: Long, offset: Long, musicSource: String) {
+    fun fetchMoreTracksForInfiniteScroll() {
+        offsets.merge("tracks", 1) { current, value -> current + value }
+        viewModelScope.launch {
+            when(searchedMusicSource) {
+                MusicSource.SPOTIFY -> {
+                    searchTracksSpotifyUseCase(
+                        searchedKeyword,
+                        30,
+                        offsets["tracks"]?.toLong() ?: 0L,
+                        GlobalContext.Tokens.spotifyToken).collect { response ->
+                        when (response) {
+                            is Response.Loading -> {
+                            }
+                            is Response.Success<*> -> {
+                                if (response.data is SpotifyResponse) {
+                                    val spotifyResponse = response.data.tracks?.items?.toSpotifyUnifiedTracks() ?: emptyList()
+                                    spotifyResponse.forEach {
+                                        if (searchedTracks.find { x-> x.id == it.id } == null) {
+                                            searchedTracks.add(it)
+                                        }
+                                    }
 
+                                    _searchFlow.emit(Response.Success(true))
+                                }
+                            }
+                            is Response.Error -> {
+                                Log.d("SearchViewModel", response.message)
+                            }
+                        }
+                        _searchFlow.emit(response)
+                    }
+                }
+
+                MusicSource.SOUNDCLOUD -> {
+                    searchTracksSoundCloudUseCase(searchedKeyword,
+                        30,
+                        offsets["tracks"]?.toLong() ?: 0L,
+                        GlobalContext.Tokens.soundCloudToken).collect { response ->
+                        when (response) {
+                            is Response.Error -> {
+                                Log.d("SearchViewModel", response.message)
+                            }
+                            Response.Loading -> { }
+                            is Response.Success<*> -> {
+                                val trackResponse = response.data as? SoundCloudTrackResponse
+                                val soundCloudTracks = trackResponse?.collection?.toSoundCloudUnifiedTracks() ?: emptyList()
+                                soundCloudTracks.forEach {
+                                    if(searchedTracks.find { x -> x.id == it.id } == null) {
+                                        searchedTracks.add(it)
+                                    }
+                                }
+
+                                _searchFlow.emit(Response.Success(true))
+                            }
+                        }
+                        _searchFlow.emit(response)
+                    }
+                }
+                MusicSource.NOT_SPECIFIED -> { }
+            }
+        }
     }
 
-    fun searchPlaylists(keyword: String, limit: Long, offset: Long, musicSource: String) {
+    fun fetchMorePlaylistsForInfiniteScroll() {
+        offsets.merge("playlists", 1) { current, value -> current + value }
+        viewModelScope.launch {
+            when(searchedMusicSource) {
+                MusicSource.SPOTIFY -> {
+                    searchPlaylistsSpotifyUseCase(
+                        searchedKeyword,
+                        30,
+                        offsets["playlists"]?.toLong() ?: 0L,
+                        GlobalContext.Tokens.spotifyToken).collect { response ->
+                        when (response) {
+                            is Response.Loading -> {
+                            }
+                            is Response.Success<*> -> {
+                                if (response.data is SpotifyResponse) {
+                                    val spotifyResponse = response.data.playlists?.items?.toSpotifyUnifiedPlaylists() ?: emptyList()
+                                    spotifyResponse.forEach {
+                                        if(searchedPlaylists.find { x -> x.id == it.id } == null) {
+                                            searchedPlaylists.add(it)
+                                        }
+                                    }
 
+                                    _searchFlow.emit(Response.Success(true))
+                                }
+                            }
+                            is Response.Error -> {
+                                Log.d("SearchViewModel", response.message)
+                            }
+                        }
+                        _searchFlow.emit(response)
+                    }
+                }
+
+                MusicSource.SOUNDCLOUD -> {
+                    searchPlaylistsSoundCloudUseCase(searchedKeyword,
+                        30,
+                        offsets["playlists"]?.toLong() ?: 0L,
+                        GlobalContext.Tokens.soundCloudToken).collect { response ->
+                        when (response) {
+                            is Response.Error -> {
+                                Log.d("SearchViewModel", response.message)
+                            }
+                            Response.Loading -> { }
+                            is Response.Success<*> -> {
+                                val playlistResponse = response.data as? SoundCloudPlaylistResponse
+                                val soundcloudPlaylists = playlistResponse?.collection?.toSoundCloudUnifiedPlaylists() ?: emptyList()
+                                soundcloudPlaylists.forEach {
+                                    if(searchedPlaylists.find { x -> x.id == it.id } == null) {
+                                        searchedPlaylists.add(it)
+                                    }
+                                }
+
+                                _searchFlow.emit(Response.Success(true))
+                            }
+                        }
+                        _searchFlow.emit(response)
+                    }
+                }
+                MusicSource.NOT_SPECIFIED -> { }
+            }
+        }
     }
 
-    fun searchAlbums(keyword: String, limit: Long, offset: Long, musicSource: String) {
+    fun fetchMoreAlbumsForInfiniteScroll() {
+        offsets.merge("albums", 1) { current, value -> current + value }
+        viewModelScope.launch {
+            searchAlbumsSpotifyUseCase(
+                searchedKeyword,
+                30,
+                offsets["tracks"]?.toLong() ?: 0L,
+                GlobalContext.Tokens.spotifyToken).collect { response ->
+                when (response) {
+                    is Response.Loading -> {
+                    }
+                    is Response.Success<*> -> {
+                        if (response.data is SpotifyResponse) {
+                            val spotifyResponse = response.data.albums?.items
+                            spotifyResponse?.forEach {
+                                if(searchedAlbums.find { x -> x.id == it.id } == null) {
+                                    searchedAlbums.add(it)
+                                }
+                            }
 
+                            _searchFlow.emit(Response.Success(true))
+                        }
+                    }
+                    is Response.Error -> {
+                        Log.d("SearchViewModel", response.message)
+                    }
+                }
+                _searchFlow.emit(response)
+            }
+        }
     }
 
-    fun searchUsers(keyword: String, limit: Long, offset: Long, musicSource: String) {
+    fun fetchMoreUsersForInfiniteScroll() {
+        offsets.merge("users", 1) { current, value -> current + value }
+        viewModelScope.launch {
+            when(searchedMusicSource) {
+                MusicSource.SPOTIFY -> {
+                    searchUsersSpotifyUseCase(
+                        searchedKeyword,
+                        30,
+                        offsets["users"]?.toLong() ?: 0L,
+                        GlobalContext.Tokens.spotifyToken).collect { response ->
+                        when (response) {
+                            is Response.Loading -> {
+                            }
+                            is Response.Success<*> -> {
+                                if (response.data is SpotifyResponse) {
+                                    val spotifyResponse = response.data.artists?.items?.toSpotifyUnifiedUsers() ?: emptyList()
+                                    spotifyResponse.forEach {
+                                        if(searchedUsers.find { x -> x.id == it.id } == null) {
+                                            searchedUsers.add(it)
+                                        }
+                                    }
 
+                                    _searchFlow.emit(Response.Success(true))
+                                }
+                            }
+                            is Response.Error -> {
+                                Log.d("SearchViewModel", response.message)
+                            }
+                        }
+                        _searchFlow.emit(response)
+                    }
+                }
+
+                MusicSource.SOUNDCLOUD -> {
+                    searchUsersSoundCloudUseCase(searchedKeyword,
+                        30,
+                        offsets["users"]?.toLong() ?: 0L,
+                        GlobalContext.Tokens.soundCloudToken).collect { response ->
+                        when (response) {
+                            is Response.Error -> {
+                                Log.d("SearchViewModel", response.message)
+                            }
+                            Response.Loading -> { }
+                            is Response.Success<*> -> {
+                                val playlistResponse = response.data as? SoundCloudPlaylistResponse
+                                val soundCloudPlaylists = playlistResponse?.collection?.toSoundCloudUnifiedPlaylists() ?: emptyList()
+                                soundCloudPlaylists.forEach {
+                                    if(searchedPlaylists.find { x -> x.id == it.id } == null) {
+                                        searchedPlaylists.add(it)
+                                    }
+                                }
+
+                                _searchFlow.emit(Response.Success(true))
+                            }
+                        }
+                        _searchFlow.emit(response)
+                    }
+                }
+                MusicSource.NOT_SPECIFIED -> { }
+            }
+        }
     }
 }
