@@ -24,7 +24,6 @@
 ## Playlists & Customization
 - **Playlist Creation & Management**: Create, manage, and control your playlists.
 - **Favorites**: Mark songs as favorites for easy access.
-- **Personalized Playlists**: Get customized playlists like "Daily Mix" (Optional).
   
 ## Music Discovery & Trends
 - **Top Charts**: View currently trending and most popular songs.
@@ -38,9 +37,6 @@
 ## Music Source Integration
 - **Multiple Music Sources**: Access music from different platforms such as SoundCloud, Deezer, etc.
 
-## Local Storage (Optional)
-- **Local Storage**: Save downloaded songs and favorites locally on your device using Room DB (Optional).
-
 ---
 
 ## Optional Features
@@ -48,3 +44,7 @@
 - **Personalized Playlists**: This feature is optional and can be implemented if not too complex.
 - **Local Storage**: Storing downloaded songs and favorites locally is optional.
 - **Song Preview**: Listen to song previews. (Snippet of song is played)
+
+## IMPORTANT
+
+- **Spotify**: In order to use spotify in this app, you need to have the spotify app installed on the phone so the music can play.

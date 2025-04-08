@@ -4,7 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
-import com.ile.syrin_x.data.model.SpotifyUserToken
+import com.ile.syrin_x.data.model.spotify.SpotifyUserToken
 
 @Dao
 interface SpotifyDao {

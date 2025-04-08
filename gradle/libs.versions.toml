@@ -1,7 +1,9 @@
 [versions]
 accompanistPermissions = "0.32.0"
 agp = "8.9.0"
+appRemote = "0.8.0"
 browser = "1.8.0"
+coilCompose = "3.1.0"
 converterGson = "2.9.0"
 dotenvKotlin = "6.5.1"
 env = "1.1.0"
@@ -55,6 +57,9 @@ androidx-room-guava = { module = "androidx.room:room-guava", version.ref = "room
 androidx-room-ktx = { module = "androidx.room:room-ktx", version.ref = "roomRuntime" }
 androidx-room-paging = { module = "androidx.room:room-paging", version.ref = "roomRuntime" }
 androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "roomRuntime" }
+app-remote = { module = "com.spotify.android:app-remote", version.ref = "appRemote" }
+coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coilCompose" }
+coil-network-okhttp = { module = "io.coil-kt.coil3:coil-network-okhttp", version.ref = "coilCompose" }
 converter-gson = { module = "com.squareup.retrofit2:converter-gson", version.ref = "converterGson" }
 dotenv-kotlin = { module = "io.github.cdimascio:dotenv-kotlin", version.ref = "dotenvKotlin" }
 env = { module = "com.crazyhitty.chdev.ks.env:env", version.ref = "env" }

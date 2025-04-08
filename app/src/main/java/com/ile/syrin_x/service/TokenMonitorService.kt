@@ -15,6 +15,7 @@ import com.ile.syrin_x.domain.usecase.musicsource.soundcloud.GetSoundCloudUserTo
 import com.ile.syrin_x.domain.usecase.musicsource.soundcloud.RefreshSoundcloudAccessToken
 import com.ile.syrin_x.domain.usecase.musicsource.spotify.GetSpotifyUserTokenUseCase
 import com.ile.syrin_x.domain.usecase.musicsource.spotify.RefreshSpotifyAccessToken
+import com.ile.syrin_x.utils.GlobalContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
@@ -100,10 +101,12 @@ class TokenMonitorService : Service() {
 
         if(spotifyToken != null) {
             refreshSpotifyAccessToken(userUuid, spotifyToken.refreshToken)
+            GlobalContext.loggedInMusicSources.add("Spotify")
             Log.d("TokenMonitorService", "Spotify token refreshed.")
         }
         if(soundCloudToken != null) {
             refreshSoundcloudAccessToken(userUuid, soundCloudToken.refreshToken)
+            GlobalContext.loggedInMusicSources.add("SoundCloud")
             Log.d("TokenMonitorService", "SoundCloud token refreshed.")
         }
     }

@@ -1,6 +1,6 @@
 package com.ile.syrin_x.domain.usecase.musicsource.spotify
 
-import com.ile.syrin_x.data.model.SpotifyUserToken
+import com.ile.syrin_x.data.model.spotify.SpotifyUserToken
 import com.ile.syrin_x.domain.repository.SpotifyAuthRepository
 import javax.inject.Inject
 

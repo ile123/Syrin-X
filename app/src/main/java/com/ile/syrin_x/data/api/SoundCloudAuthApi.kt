@@ -1,8 +1,6 @@
 package com.ile.syrin_x.data.api
 
 import com.ile.syrin_x.data.model.AccessTokenResponse
-import com.ile.syrin_x.data.model.SoundCloudUserToken
-import kotlinx.coroutines.flow.Flow
 import retrofit2.Response
 import retrofit2.http.Field
 import retrofit2.http.FormUrlEncoded

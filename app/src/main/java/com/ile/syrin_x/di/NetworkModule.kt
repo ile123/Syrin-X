@@ -1,6 +1,8 @@
 package com.ile.syrin_x.di
 
+import com.ile.syrin_x.data.api.SoundCloudApi
 import com.ile.syrin_x.data.api.SoundCloudAuthApi
+import com.ile.syrin_x.data.api.SpotifyApi
 import com.ile.syrin_x.data.api.SpotifyAuthApi
 import dagger.Module
 import dagger.Provides
@@ -42,19 +44,28 @@ object NetworkModule {
     @Provides
     @Singleton
     @Named("MainApi")
-    fun provideSpotifyApi(retrofit: Retrofit): SpotifyAuthApi {
+    fun provideSpotifyApi(retrofit: Retrofit): SpotifyApi {
         return retrofit.newBuilder()
             .baseUrl(SPOTIFY_BASE_URL)
             .build()
-            .create(SpotifyAuthApi::class.java)
+            .create(SpotifyApi::class.java)
     }
 
     @Provides
     @Singleton
-    fun provideSoundCloudApi(retrofit: Retrofit): SoundCloudAuthApi {
+    fun provideSoundCloudAuthApi(retrofit: Retrofit): SoundCloudAuthApi {
         return retrofit.newBuilder()
             .baseUrl(SOUNDCLOUD_BASE_URL)
             .build()
             .create(SoundCloudAuthApi::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideSoundCloudApi(retrofit: Retrofit): SoundCloudApi {
+        return retrofit.newBuilder()
+            .baseUrl(SOUNDCLOUD_BASE_URL)
+            .build()
+            .create(SoundCloudApi::class.java)
     }
 }
