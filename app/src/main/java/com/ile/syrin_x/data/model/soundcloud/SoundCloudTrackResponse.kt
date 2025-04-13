@@ -113,3 +113,11 @@ data class SoundCloudTrackById(
     val waveform_url: String,
     val access: String
 )
+
+@Immutable
+data class SoundCloudTrackStreamableUrls(
+    val http_mp3_128_url: String,
+    val hls_mp3_128_url: String,
+    val hls_opus_64_url: String,
+    val preview_mp3_128_url: String
+)

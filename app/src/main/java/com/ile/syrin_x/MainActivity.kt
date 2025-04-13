@@ -13,12 +13,16 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.MutableLiveData
+import com.ile.syrin_x.service.MusicPlaybackService
 import com.ile.syrin_x.service.TokenMonitorService
 import com.ile.syrin_x.ui.navigation.SetUpNavigationGraph
+import com.ile.syrin_x.ui.screen.player.PlayerScaffold
 import com.ile.syrin_x.ui.theme.SyrinXTheme
 import com.ile.syrin_x.utils.extractAuthorizationCode
 import com.ile.syrin_x.viewModel.MusicSourceViewModel
+import com.ile.syrin_x.viewModel.PlayerViewModel
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -31,12 +35,15 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
+            val viewModel: PlayerViewModel = hiltViewModel()
             SyrinXTheme {
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
-                ) {
-                    SetUpNavigationGraph()
+                PlayerScaffold(viewModel = viewModel) {
+                    Surface(
+                        modifier = Modifier.fillMaxSize(),
+                        color = MaterialTheme.colorScheme.background
+                    ) {
+                        SetUpNavigationGraph()
+                    }
                 }
             }
         }
@@ -74,6 +81,4 @@ class MainActivity : ComponentActivity() {
         val intent = Intent(this, TokenMonitorService::class.java)
         ContextCompat.startForegroundService(this, intent)
     }
-
 }
-

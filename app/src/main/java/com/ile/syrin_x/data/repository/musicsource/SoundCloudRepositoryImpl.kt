@@ -2,8 +2,11 @@ package com.ile.syrin_x.data.repository.musicsource
 
 import android.util.Log
 import com.ile.syrin_x.data.api.SoundCloudApi
+import com.ile.syrin_x.data.model.soundcloud.SoundCloudTrackStreamableUrls
 import com.ile.syrin_x.domain.core.Response
 import com.ile.syrin_x.domain.repository.SoundCloudRepository
+import com.ile.syrin_x.utils.EnvLoader
+import com.ile.syrin_x.utils.GlobalContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import javax.inject.Inject
@@ -15,7 +18,7 @@ class SoundCloudRepositoryImpl @Inject constructor(
         try {
             emit(Response.Loading)
             val authorization = "OAuth $accessToken"
-            val access = listOf("playable", "preview", "blocked")
+            val access = listOf("playable")
             val result = api.getTracks(
                 authorization,
                 keyword,
@@ -83,6 +86,20 @@ class SoundCloudRepositoryImpl @Inject constructor(
         } catch (e: Exception) {
             Log.d("SoundCloud Search Error", e.message.toString())
             emit(Response.Error(e.message.toString()))
+        }
+    }
+
+    override suspend fun getSoundCloudTrackStreamUrls(
+        id: String,
+        accessToken: String
+    ): SoundCloudTrackStreamableUrls {
+        try {
+            val authorization = "OAuth $accessToken"
+            val result = api.getSoundCloudTrackStreamableUrls(authorization, id)
+            return result
+        } catch (e: Exception) {
+            Log.d("SoundCloud Search Error", e.message.toString())
+            return SoundCloudTrackStreamableUrls("https://api.soundcloud.com/tracks/${id}/stream?client_id=${EnvLoader.soundCloudClientId}", "", "", "")
         }
     }
 }

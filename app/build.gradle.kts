@@ -5,6 +5,7 @@ plugins {
     id("com.google.gms.google-services")
     id("com.google.dagger.hilt.android")
     id("com.google.devtools.ksp")
+    id("kotlin-parcelize")
 }
 
 android {
@@ -57,6 +58,7 @@ dependencies {
     implementation(libs.firebase.crashlytics.buildtools)
     implementation(libs.androidx.runtime.livedata)
     implementation(files("../spotify-app-remote-release-0.8.0.aar"))
+    implementation(libs.androidx.media3.exoplayer)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -98,4 +100,10 @@ dependencies {
     implementation(libs.coil.network.okhttp)
     implementation(libs.androidx.browser)
     implementation(libs.dotenv.kotlin)
+    implementation(libs.accompanist.permissions.v0360)
+    implementation(libs.androidx.media)
+    implementation(libs.exoplayer.ui)
+    implementation(libs.exoplayer.core)
+    implementation(libs.exoplayer.ui)
+    implementation(libs.androidx.media.v160)
 }

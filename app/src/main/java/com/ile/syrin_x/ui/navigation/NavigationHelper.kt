@@ -25,7 +25,7 @@ import com.ile.syrin_x.viewModel.SearchViewModel
 @Composable
 fun SetUpNavigationGraph(
     navHostController: NavHostController = rememberNavController(),
-    authenticationNavigationViewModel: AuthenticationNavigationViewModel = hiltViewModel()
+    authenticationNavigationViewModel: AuthenticationNavigationViewModel = hiltViewModel(),
 ) {
 
     NavHost(
