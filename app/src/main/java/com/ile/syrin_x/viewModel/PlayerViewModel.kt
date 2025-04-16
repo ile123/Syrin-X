@@ -15,7 +15,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class PlayerViewModel @Inject constructor(
-    private val audioPlayer: UnifiedAudioPlayer
+    val audioPlayer: UnifiedAudioPlayer
 ) : ViewModel() {
 
     val isPlaying: StateFlow<Boolean> = audioPlayer.isPlaying

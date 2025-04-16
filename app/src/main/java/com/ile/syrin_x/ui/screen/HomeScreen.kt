@@ -21,7 +21,7 @@ import com.ile.syrin_x.viewModel.HomeViewModel
 fun HomeScreen(
     navHostController: NavHostController,
     homeViewModel: HomeViewModel = hiltViewModel(),
-    headerViewModel: HeaderViewModel = hiltViewModel()
+    headerViewModel: HeaderViewModel = hiltViewModel(),
 ) {
         Scaffold(
             modifier = Modifier.fillMaxSize(),

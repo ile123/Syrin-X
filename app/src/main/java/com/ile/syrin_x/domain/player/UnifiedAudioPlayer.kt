@@ -1,31 +1,50 @@
 package com.ile.syrin_x.domain.player
+
+import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.drawable.BitmapDrawable
+import android.net.Uri
+import android.support.v4.media.session.MediaSessionCompat
+import android.support.v4.media.session.PlaybackStateCompat
 import android.util.Log
 import androidx.core.content.ContextCompat
 import com.google.android.exoplayer2.ExoPlayer
-import com.google.android.exoplayer2.MediaItem
 import com.google.android.exoplayer2.PlaybackException
 import com.google.android.exoplayer2.Player
+import com.google.android.exoplayer2.MediaItem
+import com.google.android.exoplayer2.MediaMetadata
 import com.google.android.exoplayer2.source.ProgressiveMediaSource
+import com.google.android.exoplayer2.ui.PlayerNotificationManager
 import com.google.android.exoplayer2.upstream.DefaultHttpDataSource
-import com.ile.syrin_x.data.enums.MusicSource
+import com.ile.syrin_x.MainActivity
 import com.ile.syrin_x.data.enums.MusicPlayerRepeatMode
+import com.ile.syrin_x.data.enums.MusicSource
 import com.ile.syrin_x.data.model.UnifiedTrack
 import com.ile.syrin_x.service.MusicPlaybackService
 import com.ile.syrin_x.utils.GlobalContext
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
+import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.launch
+import javax.inject.Inject
+import javax.inject.Singleton
+import coil.ImageLoader
+import coil.request.ImageRequest
 
-class UnifiedAudioPlayer(
-    private val context: Context,
+@Singleton
+class UnifiedAudioPlayer @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val spotifyRemoteClient: SpotifyRemoteClient
 ) : AudioPlayerController {
 
-    private val exoPlayer = ExoPlayer.Builder(context).build()
+    private var exoPlayer = ExoPlayer.Builder(context).build()
+    private var isReleased = false
+
     private var currentTrack: UnifiedTrack? = null
     private var currentSource: MusicSource? = null
 
@@ -42,48 +61,155 @@ class UnifiedAudioPlayer(
     val currentRepeatMode: MusicPlayerRepeatMode
         get() = _currentRepeatMode
 
-    private fun startServiceIfNeeded() {
-        val intent = Intent(context, MusicPlaybackService::class.java)
-        ContextCompat.startForegroundService(context, intent)
+    lateinit var notificationManager: PlayerNotificationManager
+    lateinit var currentNotification: Notification
+    private lateinit var mediaSession: MediaSessionCompat
+
+    private var pollingScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+    private var positionPollingJob: Job? = null
+
+    init {
+        setupMediaSession()
+        setupNotification()
+    }
+
+    private fun ensurePlayerInitialized() {
+        if (isReleased) {
+            exoPlayer = ExoPlayer.Builder(context).build()
+            exoPlayer.addListener(playerListener)
+            notificationManager.setPlayer(exoPlayer)
+            isReleased = false
+        }
+    }
+
+    private fun setupMediaSession() {
+        mediaSession = MediaSessionCompat(context, "SyrinXMediaSession").apply {
+            setCallback(object : MediaSessionCompat.Callback() {
+                override fun onPlay() {
+                    resume()
+                }
+                override fun onPause() {
+                    pause()
+                }
+                override fun onSkipToNext() {
+                    skipToNext()
+                }
+                override fun onSkipToPrevious() {
+                    skipToPrevious()
+                }
+                override fun onSeekTo(pos: Long) {
+                    seekTo(pos)
+                }
+            })
+            isActive = true
+        }
+    }
+
+    private fun setupNotification() {
+        val channelId = "music_playback_channel"
+        val channel = NotificationChannel(
+            channelId,
+            "Playback",
+            NotificationManager.IMPORTANCE_LOW
+        )
+        context.getSystemService(NotificationManager::class.java)
+            .createNotificationChannel(channel)
+
+        notificationManager = PlayerNotificationManager.Builder(context, 1001, channelId)
+            .setMediaDescriptionAdapter(object : PlayerNotificationManager.MediaDescriptionAdapter {
+                override fun getCurrentContentTitle(player: Player): CharSequence {
+                    return player.mediaMetadata.title ?: "Unknown"
+                }
+                override fun createCurrentContentIntent(player: Player): PendingIntent? {
+                    val intent = Intent(context, MainActivity::class.java).apply {
+                        action = Intent.ACTION_MAIN
+                        addCategory(Intent.CATEGORY_LAUNCHER)
+                        flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                    }
+                    return PendingIntent.getActivity(
+                        context,
+                        0,
+                        intent,
+                        PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+                    )
+                }
+                override fun getCurrentContentText(player: Player): CharSequence? {
+                    return player.mediaMetadata.artist
+                }
+                override fun getCurrentLargeIcon(
+                    player: Player,
+                    callback: PlayerNotificationManager.BitmapCallback
+                ): Bitmap? {
+                    val artworkUri = player.mediaMetadata.artworkUri ?: return null
+                    val imageLoader = ImageLoader(context)
+                    val request = ImageRequest.Builder(context)
+                        .data(artworkUri)
+                        .allowHardware(false)
+                        .target { result ->
+                            if (result is BitmapDrawable) {
+                                callback.onBitmap(result.bitmap)
+                            }
+                        }
+                        .build()
+                    imageLoader.enqueue(request)
+                    return null
+                }
+            })
+            .setNotificationListener(object : PlayerNotificationManager.NotificationListener {
+                override fun onNotificationPosted(id: Int, notification: Notification, ongoing: Boolean) {
+                    currentNotification = notification
+                    val serviceIntent = Intent(context, MusicPlaybackService::class.java)
+                    serviceIntent.putExtra("notification_id", id)
+                    ContextCompat.startForegroundService(context, serviceIntent)
+                }
+                override fun onNotificationCancelled(id: Int, dismissedByUser: Boolean) {
+                    if (exoPlayer.isPlaying) {
+                        pause()
+                    }
+                }
+            })
+            .build()
+
+        notificationManager.setPlayer(exoPlayer)
+        notificationManager.setMediaSessionToken(mediaSession.sessionToken)
+        notificationManager.setUsePlayPauseActions(true)
+        notificationManager.setUseNextAction(true)
+        notificationManager.setUsePreviousAction(true)
+        notificationManager.setUseChronometer(true)
     }
 
     override fun play(track: UnifiedTrack) {
+        ensurePlayerInitialized()
         currentTrack = track
         currentSource = track.musicSource
 
-        startServiceIfNeeded()
-
         when (track.musicSource) {
-            MusicSource.SOUNDCLOUD -> {
-                Log.d("UnifiedAudioPlayer", "Playing song from SoundCloud.")
-                playWithExoPlayer(track)
+            MusicSource.SOUNDCLOUD -> playWithExoPlayer(track)
+            MusicSource.SPOTIFY -> CoroutineScope(Dispatchers.Main).launch {
+                spotifyRemoteClient.connect().fold(
+                    onSuccess = {
+                        spotifyRemoteClient.play(track)
+                    },
+                    onFailure = { Log.e("UnifiedAudioPlayer", "Spotify connect failed", it) }
+                )
             }
-
-            MusicSource.SPOTIFY -> {
-                Log.d("UnifiedAudioPlayer", "Attempting to play song from Spotify.")
-
-                CoroutineScope(Dispatchers.Main).launch {
-                    val result = spotifyRemoteClient.connect()
-                    result.fold(
-                        onSuccess = {
-                            spotifyRemoteClient.play(track)
-                        },
-                        onFailure = {
-                            Log.e("UnifiedAudioPlayer", "Spotify connect failed", it)
-                        }
-                    )
-                }
-
-            }
-
-            MusicSource.NOT_SPECIFIED -> {
-                Log.w("UnifiedAudioPlayer", "Music source not specified for track: ${track.title}")
-            }
+            else -> {}
         }
     }
 
     private fun playWithExoPlayer(track: UnifiedTrack) {
         val playbackUrl = track.playbackUrl ?: return
+
+        val mediaItem = MediaItem.Builder()
+            .setUri(playbackUrl)
+            .setMediaMetadata(
+                MediaMetadata.Builder()
+                    .setTitle(track.title)
+                    .setArtist(track.artists?.joinToString(", "))
+                    .setArtworkUri(track.artworkUrl?.let { Uri.parse(it) })
+                    .build()
+            )
+            .build()
 
         val dataSourceFactory = DefaultHttpDataSource.Factory()
             .setUserAgent("SyrinX-App/1.0")
@@ -92,52 +218,93 @@ class UnifiedAudioPlayer(
             )
 
         val mediaSource = ProgressiveMediaSource.Factory(dataSourceFactory)
-            .createMediaSource(MediaItem.fromUri(playbackUrl))
+            .createMediaSource(mediaItem)
 
-        exoPlayer.addListener(object : Player.Listener {
-            override fun onIsPlayingChanged(isPlaying: Boolean) {
-                Log.d("ExoPlayer", "isPlaying: $isPlaying")
-                _isPlaying.value = isPlaying
-            }
+        exoPlayer.clearMediaItems()
+        exoPlayer.removeListener(playerListener)
+        exoPlayer.addListener(playerListener)
 
-            override fun onPlaybackStateChanged(state: Int) {
-                Log.d("ExoPlayer", "Playback state: $state")
-                if (state == Player.STATE_READY) {
-                    _duration.value = exoPlayer.duration
-                }
-            }
-
-            override fun onPlayerError(error: PlaybackException) {
-                Log.e("ExoPlayer", "Playback error: ${error.message}", error)
-            }
-        })
+        exoPlayer.seekTo(0)
+        _playbackPosition.value = 0L
 
         exoPlayer.setMediaSource(mediaSource)
         exoPlayer.prepare()
+        exoPlayer.playWhenReady = true
         exoPlayer.play()
+
+        startPositionPolling()
+    }
+
+    private val playerListener = object : Player.Listener {
+        override fun onIsPlayingChanged(isPlaying: Boolean) {
+            _isPlaying.value = isPlaying
+            updateMediaSessionPlaybackState()
+            startPositionPolling()
+        }
+        override fun onPlaybackStateChanged(state: Int) {
+            if (state == Player.STATE_READY) {
+                _duration.value = exoPlayer.duration
+            }
+        }
+        override fun onPlayerError(error: PlaybackException) {
+            Log.e("UnifiedAudioPlayer", "Playback error", error)
+        }
+    }
+
+    private fun startPositionPolling() {
+        positionPollingJob?.cancel()
+        positionPollingJob = pollingScope.launch {
+            while (isActive) {
+                _playbackPosition.value = exoPlayer.currentPosition
+                delay(1000L)
+            }
+        }
+    }
+
+    private fun updateMediaSessionPlaybackState() {
+        val playbackState = PlaybackStateCompat.Builder()
+            .setActions(
+                PlaybackStateCompat.ACTION_PLAY or
+                        PlaybackStateCompat.ACTION_PAUSE or
+                        PlaybackStateCompat.ACTION_SKIP_TO_NEXT or
+                        PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS or
+                        PlaybackStateCompat.ACTION_SEEK_TO
+            )
+            .setState(
+                if (exoPlayer.isPlaying) PlaybackStateCompat.STATE_PLAYING else PlaybackStateCompat.STATE_PAUSED,
+                exoPlayer.currentPosition,
+                1f
+            )
+            .build()
+        mediaSession.setPlaybackState(playbackState)
     }
 
     override fun pause() {
-        when (currentSource) {
-            MusicSource.SOUNDCLOUD -> exoPlayer.pause()
-            MusicSource.SPOTIFY -> spotifyRemoteClient.pause()
-            else -> {}
+        Log.d("UnifiedAudioPlayer", "pause() called")
+        if (currentSource == MusicSource.SOUNDCLOUD) {
+            exoPlayer.pause()
+            startPositionPolling()
+        } else {
+            spotifyRemoteClient.pause()
         }
     }
 
     override fun resume() {
-        when (currentSource) {
-            MusicSource.SOUNDCLOUD -> exoPlayer.play()
-            MusicSource.SPOTIFY -> spotifyRemoteClient.resume()
-            else -> {}
+        ensurePlayerInitialized()
+        if (currentSource == MusicSource.SOUNDCLOUD) {
+            exoPlayer.play()
+            startPositionPolling()
+        } else {
+            spotifyRemoteClient.resume()
         }
     }
 
     override fun seekTo(positionMs: Long) {
-        when (currentSource) {
-            MusicSource.SOUNDCLOUD -> exoPlayer.seekTo(positionMs)
-            MusicSource.SPOTIFY -> spotifyRemoteClient.seekTo(positionMs)
-            else -> {}
+        ensurePlayerInitialized()
+        if (currentSource == MusicSource.SOUNDCLOUD) {
+            exoPlayer.seekTo(positionMs)
+        } else {
+            spotifyRemoteClient.seekTo(positionMs)
         }
     }
 
@@ -155,8 +322,18 @@ class UnifiedAudioPlayer(
     }
 
     override fun release() {
+        positionPollingJob?.cancel()
+        pollingScope.cancel()
+        pollingScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
         exoPlayer.release()
+        isReleased = true
         spotifyRemoteClient.disconnect()
+        mediaSession.release()
+    }
+
+    private fun stop() {
+        positionPollingJob?.cancel()
+        exoPlayer.stop()
+        release()
     }
 }
-

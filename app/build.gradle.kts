@@ -106,4 +106,5 @@ dependencies {
     implementation(libs.exoplayer.core)
     implementation(libs.exoplayer.ui)
     implementation(libs.androidx.media.v160)
+    implementation(libs.coil)
 }

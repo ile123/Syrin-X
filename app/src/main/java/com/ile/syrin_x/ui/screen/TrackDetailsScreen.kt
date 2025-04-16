@@ -55,6 +55,7 @@ import com.ile.syrin_x.viewModel.PlayerViewModel
 
 @Composable
 fun TrackDetailsScreen(
+    playerViewModel: PlayerViewModel,
     navHostController: NavHostController,
     trackId: String,
     musicSource: MusicSource,
@@ -65,11 +66,9 @@ fun TrackDetailsScreen(
     }
 
     val trackDetailsState = trackDetailsViewModel.searchFlow.collectAsState(initial = Response.Loading)
-    val playerViewModel: PlayerViewModel = hiltViewModel()
 
     val scope = rememberCoroutineScope()
     val hostState = remember { SnackbarHostState() }
-    val context = LocalContext.current
 
     Scaffold(
         snackbarHost = { SnackbarHost(hostState = hostState) },
