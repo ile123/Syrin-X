@@ -1,8 +1,8 @@
 package com.ile.syrin_x.di
 
 import android.content.Context
-import com.ile.syrin_x.domain.player.SpotifyRemoteClient
 import com.ile.syrin_x.domain.player.UnifiedAudioPlayer
+import com.ile.syrin_x.domain.repository.SpotifyRepository
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -16,16 +16,10 @@ object PlayerModule {
 
     @Provides
     @Singleton
-    fun provideSpotifyRemoteClient(@ApplicationContext context: Context): SpotifyRemoteClient {
-        return SpotifyRemoteClient(context)
-    }
-
-    @Provides
-    @Singleton
     fun provideUnifiedAudioPlayer(
         @ApplicationContext context: Context,
-        spotifyRemoteClient: SpotifyRemoteClient
+        spotifyRepository: SpotifyRepository
     ): UnifiedAudioPlayer {
-        return UnifiedAudioPlayer(context, spotifyRemoteClient)
+        return UnifiedAudioPlayer(context, spotifyRepository)
     }
 }

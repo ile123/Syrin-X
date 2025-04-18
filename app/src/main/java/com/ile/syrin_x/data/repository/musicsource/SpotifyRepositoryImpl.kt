@@ -2,7 +2,9 @@ package com.ile.syrin_x.data.repository.musicsource
 
 import android.util.Log
 import com.ile.syrin_x.data.api.SpotifyApi
-import com.ile.syrin_x.data.model.spotify.SpotifyAlbum
+import com.ile.syrin_x.data.enums.MusicPlayerRepeatMode
+import com.ile.syrin_x.data.model.UnifiedTrack
+import com.ile.syrin_x.data.model.spotify.PlaybackRequestBody
 import com.ile.syrin_x.data.model.spotify.SpotifyAlbumByIdResponse
 import com.ile.syrin_x.data.model.spotify.SpotifyPlaylistById
 import com.ile.syrin_x.data.model.spotify.SpotifyResponse
@@ -112,5 +114,79 @@ class SpotifyRepositoryImpl @Inject constructor(
             emit(Response.Error(e.message.toString()))
         }
     }
+
+    override suspend fun play(track: UnifiedTrack, accessToken: String, deviceId: String?) {
+        try {
+            val body = PlaybackRequestBody(uris = listOf(track.playbackUrl))
+            val response = api.startPlayback("Bearer $accessToken", deviceId, body)
+            if (!response.isSuccessful) {
+                Log.e("SpotifyPlayback", "Play failed: ${response.code()} ${response.message()}")
+            }
+        } catch (e: Exception) {
+            Log.e("SpotifyPlayback", "Play failed: ${e.message}")
+        }
+    }
+
+    override suspend fun pause(accessToken: String, deviceId: String?) {
+        try {
+            val response = api.pausePlayback("Bearer $accessToken", deviceId)
+            if (!response.isSuccessful) {
+                Log.e("SpotifyPlayback", "Pause failed: ${response.code()} ${response.message()}")
+            }
+        } catch (e: Exception) {
+            Log.e("SpotifyPlayback", "Pause failed: ${e.message}")
+        }
+    }
+
+    override suspend fun seekTo(positionMs: Long, accessToken: String, deviceId: String?) {
+        try {
+            val response = api.seekToPosition("Bearer $accessToken", positionMs, deviceId)
+            if (!response.isSuccessful) {
+                Log.e("SpotifyPlayback", "Seek failed: ${response.code()} ${response.message()}")
+            }
+        } catch (e: Exception) {
+            Log.e("SpotifyPlayback", "Seek failed: ${e.message}")
+        }
+    }
+
+    override suspend fun skipToNext(accessToken: String, deviceId: String?) {
+        try {
+            val response = api.skipNext("Bearer $accessToken", deviceId)
+            if (!response.isSuccessful) {
+                Log.e("SpotifyPlayback", "Skip to next failed: ${response.code()} ${response.message()}")
+            }
+        } catch (e: Exception) {
+            Log.e("SpotifyPlayback", "Skip to next failed: ${e.message}")
+        }
+    }
+
+    override suspend fun skipToPrevious(accessToken: String, deviceId: String?) {
+        try {
+            val response = api.skipPrevious("Bearer $accessToken", deviceId)
+            if (!response.isSuccessful) {
+                Log.e("SpotifyPlayback", "Skip to previous failed: ${response.code()} ${response.message()}")
+            }
+        } catch (e: Exception) {
+            Log.e("SpotifyPlayback", "Skip to previous failed: ${e.message}")
+        }
+    }
+
+    override suspend fun setRepeatMode(mode: MusicPlayerRepeatMode, accessToken: String, deviceId: String?) {
+        val apiState = when (mode) {
+            MusicPlayerRepeatMode.OFF -> "off"
+            MusicPlayerRepeatMode.ONE -> "track"
+            MusicPlayerRepeatMode.ALL -> "context"
+        }
+
+        try {
+            val response = api.setRepeatMode("Bearer $accessToken", apiState, deviceId)
+            if (!response.isSuccessful) {
+                Log.e("SpotifyPlayback", "Set repeat mode failed: ${response.code()} ${response.message()}")
+            }
+        } catch (e: Exception) {
+            Log.e("SpotifyPlayback", "Set repeat mode failed: ${e.message}")
+        }
+    }
+
 
 }

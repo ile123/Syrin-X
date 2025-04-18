@@ -35,11 +35,13 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import coil.ImageLoader
 import coil.request.ImageRequest
+import com.ile.syrin_x.domain.repository.SpotifyRepository
+import com.spotify.protocol.types.Repeat
 
 @Singleton
 class UnifiedAudioPlayer @Inject constructor(
     @ApplicationContext private val context: Context,
-    private val spotifyRemoteClient: SpotifyRemoteClient
+    private val spotifyRepository: SpotifyRepository
 ) : AudioPlayerController {
 
     private var exoPlayer = ExoPlayer.Builder(context).build()
@@ -186,12 +188,7 @@ class UnifiedAudioPlayer @Inject constructor(
         when (track.musicSource) {
             MusicSource.SOUNDCLOUD -> playWithExoPlayer(track)
             MusicSource.SPOTIFY -> CoroutineScope(Dispatchers.Main).launch {
-                spotifyRemoteClient.connect().fold(
-                    onSuccess = {
-                        spotifyRemoteClient.play(track)
-                    },
-                    onFailure = { Log.e("UnifiedAudioPlayer", "Spotify connect failed", it) }
-                )
+
             }
             else -> {}
         }
@@ -285,7 +282,7 @@ class UnifiedAudioPlayer @Inject constructor(
             exoPlayer.pause()
             startPositionPolling()
         } else {
-            spotifyRemoteClient.pause()
+            //Spotify stuff goes here
         }
     }
 
@@ -295,7 +292,7 @@ class UnifiedAudioPlayer @Inject constructor(
             exoPlayer.play()
             startPositionPolling()
         } else {
-            spotifyRemoteClient.resume()
+            //Spotify stuff goes here
         }
     }
 
@@ -304,21 +301,25 @@ class UnifiedAudioPlayer @Inject constructor(
         if (currentSource == MusicSource.SOUNDCLOUD) {
             exoPlayer.seekTo(positionMs)
         } else {
-            spotifyRemoteClient.seekTo(positionMs)
+            //Spotify stuff goes here
         }
     }
 
     override fun skipToNext() {
-        spotifyRemoteClient.skipToNext()
+        //Spotify stuff goes here
     }
 
     override fun skipToPrevious() {
-        spotifyRemoteClient.skipToPrevious()
+        //Spotify stuff goes here
     }
 
     override fun setCurrentRepeatMode(repeatMode: MusicPlayerRepeatMode) {
         _currentRepeatMode = repeatMode
-        spotifyRemoteClient.setRepeatMode(repeatMode)
+        when(repeatMode) {
+            MusicPlayerRepeatMode.OFF -> TODO()//Spotify stuff goes here
+            MusicPlayerRepeatMode.ONE -> TODO()//Spotify stuff goes here
+            MusicPlayerRepeatMode.ALL -> TODO()//Spotify stuff goes here
+        }
     }
 
     override fun release() {
@@ -327,7 +328,7 @@ class UnifiedAudioPlayer @Inject constructor(
         pollingScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
         exoPlayer.release()
         isReleased = true
-        spotifyRemoteClient.disconnect()
+        //Spotify stuff goes here
         mediaSession.release()
     }
 
