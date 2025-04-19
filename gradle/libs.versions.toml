@@ -9,6 +9,7 @@ browser = "1.8.0"
 coil = "2.4.0"
 coilCompose = "3.1.0"
 converterGson = "2.9.0"
+coreKtxVersion = "1.16.0"
 dotenvKotlin = "6.5.1"
 env = "1.1.0"
 exoplayerUi = "2.19.1"
@@ -52,6 +53,7 @@ accompanist-permissions = { module = "com.google.accompanist:accompanist-permiss
 accompanist-permissions-v0360 = { module = "com.google.accompanist:accompanist-permissions", version.ref = "accompanistPermissionsVersion" }
 androidx-browser = { module = "androidx.browser:browser", version.ref = "browser" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+androidx-core-ktx-v1160 = { module = "androidx.core:core-ktx", version.ref = "coreKtxVersion" }
 androidx-hilt-navigation-compose = { module = "androidx.hilt:hilt-navigation-compose", version.ref = "hiltNavigationCompose" }
 androidx-media = { module = "androidx.media:media", version.ref = "media" }
 androidx-media-v160 = { module = "androidx.media:media", version.ref = "mediaVersion" }

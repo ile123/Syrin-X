@@ -8,7 +8,6 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.drawable.BitmapDrawable
-import android.net.Uri
 import android.support.v4.media.session.MediaSessionCompat
 import android.support.v4.media.session.PlaybackStateCompat
 import android.util.Log
@@ -36,7 +35,7 @@ import javax.inject.Singleton
 import coil.ImageLoader
 import coil.request.ImageRequest
 import com.ile.syrin_x.domain.repository.SpotifyRepository
-import com.spotify.protocol.types.Repeat
+import androidx.core.net.toUri
 
 @Singleton
 class UnifiedAudioPlayer @Inject constructor(
@@ -87,21 +86,11 @@ class UnifiedAudioPlayer @Inject constructor(
     private fun setupMediaSession() {
         mediaSession = MediaSessionCompat(context, "SyrinXMediaSession").apply {
             setCallback(object : MediaSessionCompat.Callback() {
-                override fun onPlay() {
-                    resume()
-                }
-                override fun onPause() {
-                    pause()
-                }
-                override fun onSkipToNext() {
-                    skipToNext()
-                }
-                override fun onSkipToPrevious() {
-                    skipToPrevious()
-                }
-                override fun onSeekTo(pos: Long) {
-                    seekTo(pos)
-                }
+                override fun onPlay() = resume()
+                override fun onPause() = pause()
+                override fun onSkipToNext() = skipToNext()
+                override fun onSkipToPrevious() = skipToPrevious()
+                override fun onSeekTo(pos: Long) = seekTo(pos)
             })
             isActive = true
         }
@@ -109,39 +98,29 @@ class UnifiedAudioPlayer @Inject constructor(
 
     private fun setupNotification() {
         val channelId = "music_playback_channel"
-        val channel = NotificationChannel(
-            channelId,
-            "Playback",
-            NotificationManager.IMPORTANCE_LOW
-        )
-        context.getSystemService(NotificationManager::class.java)
-            .createNotificationChannel(channel)
+        val channel = NotificationChannel(channelId, "Playback", NotificationManager.IMPORTANCE_LOW)
+        context.getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
 
         notificationManager = PlayerNotificationManager.Builder(context, 1001, channelId)
             .setMediaDescriptionAdapter(object : PlayerNotificationManager.MediaDescriptionAdapter {
                 override fun getCurrentContentTitle(player: Player): CharSequence {
                     return player.mediaMetadata.title ?: "Unknown"
                 }
+
                 override fun createCurrentContentIntent(player: Player): PendingIntent? {
                     val intent = Intent(context, MainActivity::class.java).apply {
                         action = Intent.ACTION_MAIN
                         addCategory(Intent.CATEGORY_LAUNCHER)
                         flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
                     }
-                    return PendingIntent.getActivity(
-                        context,
-                        0,
-                        intent,
-                        PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
-                    )
+                    return PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
                 }
+
                 override fun getCurrentContentText(player: Player): CharSequence? {
                     return player.mediaMetadata.artist
                 }
-                override fun getCurrentLargeIcon(
-                    player: Player,
-                    callback: PlayerNotificationManager.BitmapCallback
-                ): Bitmap? {
+
+                override fun getCurrentLargeIcon(player: Player, callback: PlayerNotificationManager.BitmapCallback): Bitmap? {
                     val artworkUri = player.mediaMetadata.artworkUri ?: return null
                     val imageLoader = ImageLoader(context)
                     val request = ImageRequest.Builder(context)
@@ -164,10 +143,9 @@ class UnifiedAudioPlayer @Inject constructor(
                     serviceIntent.putExtra("notification_id", id)
                     ContextCompat.startForegroundService(context, serviceIntent)
                 }
+
                 override fun onNotificationCancelled(id: Int, dismissedByUser: Boolean) {
-                    if (exoPlayer.isPlaying) {
-                        pause()
-                    }
+                    if (exoPlayer.isPlaying) pause()
                 }
             })
             .build()
@@ -188,7 +166,9 @@ class UnifiedAudioPlayer @Inject constructor(
         when (track.musicSource) {
             MusicSource.SOUNDCLOUD -> playWithExoPlayer(track)
             MusicSource.SPOTIFY -> CoroutineScope(Dispatchers.Main).launch {
-
+                val token = GlobalContext.Tokens.spotifyToken
+                spotifyRepository.play(track, token)
+                startPositionPolling()
             }
             else -> {}
         }
@@ -203,19 +183,16 @@ class UnifiedAudioPlayer @Inject constructor(
                 MediaMetadata.Builder()
                     .setTitle(track.title)
                     .setArtist(track.artists?.joinToString(", "))
-                    .setArtworkUri(track.artworkUrl?.let { Uri.parse(it) })
+                    .setArtworkUri(track.artworkUrl?.toUri())
                     .build()
             )
             .build()
 
         val dataSourceFactory = DefaultHttpDataSource.Factory()
             .setUserAgent("SyrinX-App/1.0")
-            .setDefaultRequestProperties(
-                mapOf("Authorization" to "OAuth ${GlobalContext.Tokens.soundCloudToken}")
-            )
+            .setDefaultRequestProperties(mapOf("Authorization" to "OAuth ${GlobalContext.Tokens.soundCloudToken}"))
 
-        val mediaSource = ProgressiveMediaSource.Factory(dataSourceFactory)
-            .createMediaSource(mediaItem)
+        val mediaSource = ProgressiveMediaSource.Factory(dataSourceFactory).createMediaSource(mediaItem)
 
         exoPlayer.clearMediaItems()
         exoPlayer.removeListener(playerListener)
@@ -226,7 +203,6 @@ class UnifiedAudioPlayer @Inject constructor(
 
         exoPlayer.setMediaSource(mediaSource)
         exoPlayer.prepare()
-        exoPlayer.playWhenReady = true
         exoPlayer.play()
 
         startPositionPolling()
@@ -238,11 +214,13 @@ class UnifiedAudioPlayer @Inject constructor(
             updateMediaSessionPlaybackState()
             startPositionPolling()
         }
+
         override fun onPlaybackStateChanged(state: Int) {
             if (state == Player.STATE_READY) {
                 _duration.value = exoPlayer.duration
             }
         }
+
         override fun onPlayerError(error: PlaybackException) {
             Log.e("UnifiedAudioPlayer", "Playback error", error)
         }
@@ -252,13 +230,27 @@ class UnifiedAudioPlayer @Inject constructor(
         positionPollingJob?.cancel()
         positionPollingJob = pollingScope.launch {
             while (isActive) {
-                _playbackPosition.value = exoPlayer.currentPosition
+                if (currentSource == MusicSource.SOUNDCLOUD) {
+                    _playbackPosition.value = exoPlayer.currentPosition
+                } else if (currentSource == MusicSource.SPOTIFY) {
+                    try {
+                        val token = GlobalContext.Tokens.spotifyToken
+                        spotifyRepository.getCurrentPlayback(token)?.let {
+                            _playbackPosition.value = it.progress_ms
+                            _duration.value = it.item?.duration_ms ?: 0L
+                            _isPlaying.value = it.is_playing
+                        }
+                    } catch (e: Exception) {
+                        Log.e("UnifiedAudioPlayer", "Spotify polling failed", e)
+                    }
+                }
                 delay(1000L)
             }
         }
     }
 
     private fun updateMediaSessionPlaybackState() {
+        val state = if (exoPlayer.isPlaying) PlaybackStateCompat.STATE_PLAYING else PlaybackStateCompat.STATE_PAUSED
         val playbackState = PlaybackStateCompat.Builder()
             .setActions(
                 PlaybackStateCompat.ACTION_PLAY or
@@ -267,22 +259,18 @@ class UnifiedAudioPlayer @Inject constructor(
                         PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS or
                         PlaybackStateCompat.ACTION_SEEK_TO
             )
-            .setState(
-                if (exoPlayer.isPlaying) PlaybackStateCompat.STATE_PLAYING else PlaybackStateCompat.STATE_PAUSED,
-                exoPlayer.currentPosition,
-                1f
-            )
+            .setState(state, exoPlayer.currentPosition, 1f)
             .build()
         mediaSession.setPlaybackState(playbackState)
     }
 
     override fun pause() {
-        Log.d("UnifiedAudioPlayer", "pause() called")
         if (currentSource == MusicSource.SOUNDCLOUD) {
             exoPlayer.pause()
-            startPositionPolling()
         } else {
-            //Spotify stuff goes here
+            CoroutineScope(Dispatchers.IO).launch {
+                spotifyRepository.pause(GlobalContext.Tokens.spotifyToken)
+            }
         }
     }
 
@@ -290,35 +278,45 @@ class UnifiedAudioPlayer @Inject constructor(
         ensurePlayerInitialized()
         if (currentSource == MusicSource.SOUNDCLOUD) {
             exoPlayer.play()
-            startPositionPolling()
         } else {
-            //Spotify stuff goes here
+            CoroutineScope(Dispatchers.IO).launch {
+                currentTrack?.let { spotifyRepository.play(it, GlobalContext.Tokens.spotifyToken) }
+            }
         }
     }
 
     override fun seekTo(positionMs: Long) {
-        ensurePlayerInitialized()
         if (currentSource == MusicSource.SOUNDCLOUD) {
             exoPlayer.seekTo(positionMs)
         } else {
-            //Spotify stuff goes here
+            CoroutineScope(Dispatchers.IO).launch {
+                spotifyRepository.seekTo(positionMs, GlobalContext.Tokens.spotifyToken)
+            }
         }
     }
 
     override fun skipToNext() {
-        //Spotify stuff goes here
+        if (currentSource == MusicSource.SPOTIFY) {
+            CoroutineScope(Dispatchers.IO).launch {
+                spotifyRepository.skipToNext(GlobalContext.Tokens.spotifyToken)
+            }
+        }
     }
 
     override fun skipToPrevious() {
-        //Spotify stuff goes here
+        if (currentSource == MusicSource.SPOTIFY) {
+            CoroutineScope(Dispatchers.IO).launch {
+                spotifyRepository.skipToPrevious(GlobalContext.Tokens.spotifyToken)
+            }
+        }
     }
 
     override fun setCurrentRepeatMode(repeatMode: MusicPlayerRepeatMode) {
         _currentRepeatMode = repeatMode
-        when(repeatMode) {
-            MusicPlayerRepeatMode.OFF -> TODO()//Spotify stuff goes here
-            MusicPlayerRepeatMode.ONE -> TODO()//Spotify stuff goes here
-            MusicPlayerRepeatMode.ALL -> TODO()//Spotify stuff goes here
+        if (currentSource == MusicSource.SPOTIFY) {
+            CoroutineScope(Dispatchers.IO).launch {
+                spotifyRepository.setRepeatMode(repeatMode, GlobalContext.Tokens.spotifyToken)
+            }
         }
     }
 
@@ -326,10 +324,20 @@ class UnifiedAudioPlayer @Inject constructor(
         positionPollingJob?.cancel()
         pollingScope.cancel()
         pollingScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+
         exoPlayer.release()
-        isReleased = true
-        //Spotify stuff goes here
         mediaSession.release()
+        isReleased = true
+
+        if (currentSource == MusicSource.SPOTIFY) {
+            CoroutineScope(Dispatchers.IO).launch {
+                try {
+                    spotifyRepository.pause(GlobalContext.Tokens.spotifyToken)
+                } catch (e: Exception) {
+                    Log.e("UnifiedAudioPlayer", "Spotify pause during release failed", e)
+                }
+            }
+        }
     }
 
     private fun stop() {
