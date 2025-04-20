@@ -51,7 +51,7 @@ fun List<SpotifyTrackItem>.toSpotifyUnifiedTracks(): List<UnifiedTrack> = this
         durationMs = track.duration_ms,
         explicit = track.explicit,
         popularity = track.popularity,
-        playbackUrl = track.preview_url,
+        playbackUrl = "spotify:track:${track.id}",
         artworkUrl = track.album?.images?.firstOrNull()?.url ?: fallbackImageUrl,
         musicSource = MusicSource.SPOTIFY
     )
@@ -68,7 +68,7 @@ fun List<SoundCloudPlaylistTrack>.toSoundCloudPlaylistItemUnifiedTracks(): List<
             durationMs = track.duration.toInt(),
             explicit = null,
             popularity = track.playback_count.toInt(),
-            playbackUrl = track.permalink_url,
+            playbackUrl = "https://api.soundcloud.com/tracks/${track.id}/stream",
             artworkUrl = track.artwork_url ?: fallbackImageUrl,
             musicSource = MusicSource.SOUNDCLOUD
         )
@@ -138,7 +138,7 @@ fun List<SpotifyPlaylistByIdTrackItem>.toSpotifyPlaylistByIdTrackItemToUnifiedTr
             durationMs = x.track?.duration_ms,
             explicit = x.track?.explicit,
             popularity = x.track?.popularity,
-            playbackUrl = x.track?.preview_url,
+            playbackUrl = "spotify:track:${x.track?.id}",
             artworkUrl = x.track?.album?.images?.firstOrNull()?.url ?: fallbackImageUrl,
             musicSource = MusicSource.SPOTIFY
         )

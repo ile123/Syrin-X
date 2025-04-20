@@ -20,6 +20,8 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -47,14 +49,17 @@ import com.ile.syrin_x.data.enums.MusicSource
 import com.ile.syrin_x.data.model.UnifiedPlaylist
 import com.ile.syrin_x.data.model.UnifiedTrack
 import com.ile.syrin_x.domain.core.Response
+import com.ile.syrin_x.ui.icon.PlayIcon
 import com.ile.syrin_x.ui.screen.common.MyCircularProgress
 import com.ile.syrin_x.utils.GlobalContext
+import com.ile.syrin_x.viewModel.PlayerViewModel
 import com.ile.syrin_x.viewModel.PlaylistDetailsViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch
 
 @Composable
 fun PlaylistDetailsScreen(
+    playerViewModel: PlayerViewModel,
     navHostController: NavHostController,
     playlistId: String,
     musicSource: MusicSource,
@@ -98,7 +103,8 @@ fun PlaylistDetailsScreen(
                         }
                     },
                     playlistDetails = playlistDetailsViewModel.playlistDetails,
-                    playlistDetailsViewModel = playlistDetailsViewModel
+                    playlistDetailsViewModel = playlistDetailsViewModel,
+                    playerViewModel = playerViewModel
                 )
             }
         }
@@ -112,7 +118,8 @@ fun Content(
     searchSuccess: () -> Unit,
     searchError: (error: String) -> Unit,
     playlistDetails: UnifiedPlaylist?,
-    playlistDetailsViewModel: PlaylistDetailsViewModel
+    playlistDetailsViewModel: PlaylistDetailsViewModel,
+    playerViewModel: PlayerViewModel
 ) {
     val tracksLazyListState = rememberLazyListState()
 
@@ -168,6 +175,24 @@ fun Content(
         }
 
         item {
+            IconButton(
+                onClick = {
+                    if (playlistDetailsViewModel.songsInPlaylist.isNotEmpty()) {
+                        playerViewModel.setTrackListAndPlayTracks(
+                            playlistDetailsViewModel.songsInPlaylist
+                        )
+                    }
+                }
+            ) {
+                Icon(
+                    imageVector = PlayIcon,
+                    contentDescription = "Play Album",
+                    modifier = Modifier.size(30.dp)
+                )
+            }
+        }
+
+        item {
             Text(
                 text = "Tracks",
                 style = MaterialTheme.typography.bodyMedium,
@@ -178,7 +203,7 @@ fun Content(
         }
 
         items(playlistDetailsViewModel.songsInPlaylist, key = { item -> "${item.id}-${MusicCategory.PLAYLISTS}" }) { track ->
-            UnifiedPlaylistTrackRow(track = track, musicSource = track.musicSource)
+            UnifiedPlaylistTrackRow(track = track, playerViewModel = playerViewModel)
         }
     }
 
@@ -193,14 +218,17 @@ fun Content(
 @Composable
 fun UnifiedPlaylistTrackRow(
     track: UnifiedTrack,
-    musicSource: MusicSource,
     modifier: Modifier = Modifier,
+    playerViewModel: PlayerViewModel
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
             .fillMaxWidth()
             .padding(8.dp)
+            .clickable {
+                playerViewModel.playTrack(track)
+            }
     ) {
         AsyncImage(
             model = track.artworkUrl,

@@ -23,7 +23,7 @@ class PlayerViewModel @Inject constructor(
     val duration: StateFlow<Long> = audioPlayer.duration
     val currentTrack = MutableStateFlow<UnifiedTrack?>(null)
 
-    private val playlist = mutableListOf<UnifiedTrack>()
+    private val trackList = mutableListOf<UnifiedTrack>()
     private var currentIndex = 0
 
     private val _uiEvent = MutableSharedFlow<PlayerUiEvent>()
@@ -33,11 +33,17 @@ class PlayerViewModel @Inject constructor(
         data object ExpandPlayer : PlayerUiEvent()
     }
 
-    fun setPlaylist(tracks: List<UnifiedTrack>, startIndex: Int = 0) {
-        playlist.clear()
-        playlist.addAll(tracks)
-        currentIndex = startIndex
-        playTrack(playlist[currentIndex])
+    init {
+        audioPlayer.onSkipNext = { skipNext() }
+        audioPlayer.onSkipPrevious = { skipPrevious() }
+    }
+
+
+    fun setTrackListAndPlayTracks(tracks: List<UnifiedTrack>) {
+        trackList.clear()
+        trackList.addAll(tracks)
+        currentIndex = 0
+        playTrack(trackList[currentIndex])
     }
 
     fun playTrack(track: UnifiedTrack) {
@@ -58,16 +64,16 @@ class PlayerViewModel @Inject constructor(
     fun seekTo(positionMs: Long) = audioPlayer.seekTo(positionMs)
 
     fun skipNext() {
-        if (currentIndex < playlist.size - 1) {
+        if (currentIndex < trackList.size - 1) {
             currentIndex++
-            playTrack(playlist[currentIndex])
+            playTrack(trackList[currentIndex])
         }
     }
 
     fun skipPrevious() {
         if (currentIndex > 0) {
             currentIndex--
-            playTrack(playlist[currentIndex])
+            playTrack(trackList[currentIndex])
         }
     }
 

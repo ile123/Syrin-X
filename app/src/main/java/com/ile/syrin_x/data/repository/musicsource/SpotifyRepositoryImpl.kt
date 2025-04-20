@@ -240,7 +240,7 @@ class SpotifyRepositoryImpl @Inject constructor(
             }
             val response = api.getCurrentPlayback("Bearer $accessToken")
             if (response.isSuccessful) {
-                Log.e("SpotifyPlayback", "Current playback: ${response.body()?.device?.name}")
+                Log.d("SpotifyPlayback", "Current playback: ${response.body()?.device?.name}")
                 return response.body()
             }
         } catch (e: Exception) {

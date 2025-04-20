@@ -36,6 +36,9 @@ import coil.ImageLoader
 import coil.request.ImageRequest
 import com.ile.syrin_x.domain.repository.SpotifyRepository
 import androidx.core.net.toUri
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 
 @Singleton
 class UnifiedAudioPlayer @Inject constructor(
@@ -68,6 +71,12 @@ class UnifiedAudioPlayer @Inject constructor(
 
     private var pollingScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private var positionPollingJob: Job? = null
+
+    private val _onTrackEnded = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    override val onTrackEnded: SharedFlow<Unit> = _onTrackEnded.asSharedFlow()
+
+    var onSkipNext: (() -> Unit)? = null
+    var onSkipPrevious: (() -> Unit)? = null
 
     init {
         setupMediaSession()
@@ -230,8 +239,15 @@ class UnifiedAudioPlayer @Inject constructor(
         }
 
         override fun onPlaybackStateChanged(state: Int) {
-            if (state == Player.STATE_READY) {
-                _duration.value = exoPlayer.duration
+            when (state) {
+                Player.STATE_READY -> {
+                    _duration.value = exoPlayer.duration
+                }
+                Player.STATE_ENDED -> {
+                    positionPollingJob?.cancel()
+                    _onTrackEnded.tryEmit(Unit)
+                }
+                else -> { /* do nothing */ }
             }
         }
 
@@ -243,22 +259,43 @@ class UnifiedAudioPlayer @Inject constructor(
     private fun startPositionPolling() {
         positionPollingJob?.cancel()
         positionPollingJob = pollingScope.launch {
+            var lastPosition  = 0L
+            var lastIsPlaying = false
+
             while (isActive) {
                 if (currentSource == MusicSource.SOUNDCLOUD) {
                     _playbackPosition.value = exoPlayer.currentPosition
+
                 } else if (currentSource == MusicSource.SPOTIFY) {
                     try {
                         val token = GlobalContext.Tokens.spotifyToken
-                        spotifyRepository.getCurrentPlayback(token)?.let {
-                            _playbackPosition.value = it.progress_ms
-                            _duration.value = it.item?.duration_ms ?: 0L
-                            _isPlaying.value = it.is_playing
+                        spotifyRepository.getCurrentPlayback(token)?.let { playback ->
+                            val pos = playback.progress_ms
+                            val dur = playback.item?.duration_ms ?: 0L
+                            val isPlaying = playback.is_playing
+
+                            _playbackPosition.value = pos
+                            _duration.value = dur
+                            _isPlaying.value = isPlaying
+
+                            if (
+                                lastIsPlaying &&
+                                !isPlaying &&
+                                lastPosition >= dur - 1_000L
+                            ) {
+                                _onTrackEnded.tryEmit(Unit)
+                                positionPollingJob?.cancel()
+                                return@launch
+                            }
+
+                            lastPosition  = pos
+                            lastIsPlaying = isPlaying
                         }
                     } catch (e: Exception) {
                         Log.e("UnifiedAudioPlayer", "Spotify polling failed", e)
                     }
                 }
-                delay(1000L)
+                delay(1_000L)
             }
         }
     }
@@ -319,19 +356,11 @@ class UnifiedAudioPlayer @Inject constructor(
     }
 
     override fun skipToNext() {
-        if (currentSource == MusicSource.SPOTIFY) {
-            CoroutineScope(Dispatchers.IO).launch {
-                spotifyRepository.skipToNext(GlobalContext.Tokens.spotifyToken)
-            }
-        }
+        onSkipNext?.invoke()
     }
 
     override fun skipToPrevious() {
-        if (currentSource == MusicSource.SPOTIFY) {
-            CoroutineScope(Dispatchers.IO).launch {
-                spotifyRepository.skipToPrevious(GlobalContext.Tokens.spotifyToken)
-            }
-        }
+        onSkipPrevious?.invoke()
     }
 
     override fun setCurrentRepeatMode(mode: MusicPlayerRepeatMode) {

@@ -112,6 +112,7 @@ fun SetUpNavigationGraph(
             val musicSource = MusicSource.valueOf(musicSourceString)
 
             PlaylistDetailsScreen(
+                playerViewModel,
                 navHostController = navHostController,
                 playlistId = playlistId,
                 musicSource = musicSource
@@ -130,6 +131,7 @@ fun SetUpNavigationGraph(
             val musicSource = MusicSource.valueOf(musicSourceString)
 
             AlbumDetailsScreen(
+                playerViewModel,
                 navHostController,
                 albumId,
                 musicSource

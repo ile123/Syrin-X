@@ -2,6 +2,7 @@ package com.ile.syrin_x.domain.player
 
 import com.ile.syrin_x.data.enums.MusicPlayerRepeatMode
 import com.ile.syrin_x.data.model.UnifiedTrack
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 
 interface AudioPlayerController {
@@ -18,4 +19,5 @@ interface AudioPlayerController {
     val isPlaying: StateFlow<Boolean>
     val playbackPosition: StateFlow<Long>
     val duration: StateFlow<Long>
+    val onTrackEnded: SharedFlow<Unit>
 }
