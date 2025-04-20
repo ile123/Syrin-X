@@ -43,7 +43,7 @@ class UnifiedAudioPlayer @Inject constructor(
     private val spotifyRepository: SpotifyRepository
 ) : AudioPlayerController {
 
-    private var exoPlayer = ExoPlayer.Builder(context).build()
+    private var exoPlayer: ExoPlayer = ExoPlayer.Builder(context).build()
     private var isReleased = false
 
     private var currentTrack: UnifiedTrack? = null
@@ -113,14 +113,20 @@ class UnifiedAudioPlayer @Inject constructor(
                         addCategory(Intent.CATEGORY_LAUNCHER)
                         flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
                     }
-                    return PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
+                    return PendingIntent.getActivity(
+                        context, 0, intent,
+                        PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+                    )
                 }
 
                 override fun getCurrentContentText(player: Player): CharSequence? {
                     return player.mediaMetadata.artist
                 }
 
-                override fun getCurrentLargeIcon(player: Player, callback: PlayerNotificationManager.BitmapCallback): Bitmap? {
+                override fun getCurrentLargeIcon(
+                    player: Player,
+                    callback: PlayerNotificationManager.BitmapCallback
+                ): Bitmap? {
                     val artworkUri = player.mediaMetadata.artworkUri ?: return null
                     val imageLoader = ImageLoader(context)
                     val request = ImageRequest.Builder(context)
@@ -137,11 +143,16 @@ class UnifiedAudioPlayer @Inject constructor(
                 }
             })
             .setNotificationListener(object : PlayerNotificationManager.NotificationListener {
-                override fun onNotificationPosted(id: Int, notification: Notification, ongoing: Boolean) {
+                override fun onNotificationPosted(
+                    id: Int,
+                    notification: Notification,
+                    ongoing: Boolean
+                ) {
                     currentNotification = notification
-                    val serviceIntent = Intent(context, MusicPlaybackService::class.java)
-                    serviceIntent.putExtra("notification_id", id)
-                    ContextCompat.startForegroundService(context, serviceIntent)
+                    Intent(context, MusicPlaybackService::class.java).also { serviceIntent ->
+                        serviceIntent.putExtra("notification_id", id)
+                        ContextCompat.startForegroundService(context, serviceIntent)
+                    }
                 }
 
                 override fun onNotificationCancelled(id: Int, dismissedByUser: Boolean) {
@@ -190,9 +201,12 @@ class UnifiedAudioPlayer @Inject constructor(
 
         val dataSourceFactory = DefaultHttpDataSource.Factory()
             .setUserAgent("SyrinX-App/1.0")
-            .setDefaultRequestProperties(mapOf("Authorization" to "OAuth ${GlobalContext.Tokens.soundCloudToken}"))
+            .setDefaultRequestProperties(
+                mapOf("Authorization" to "OAuth ${GlobalContext.Tokens.soundCloudToken}")
+            )
 
-        val mediaSource = ProgressiveMediaSource.Factory(dataSourceFactory).createMediaSource(mediaItem)
+        val mediaSource = ProgressiveMediaSource.Factory(dataSourceFactory)
+            .createMediaSource(mediaItem)
 
         exoPlayer.clearMediaItems()
         exoPlayer.removeListener(playerListener)
@@ -280,10 +294,19 @@ class UnifiedAudioPlayer @Inject constructor(
             exoPlayer.play()
         } else {
             CoroutineScope(Dispatchers.IO).launch {
-                currentTrack?.let { spotifyRepository.play(it, GlobalContext.Tokens.spotifyToken) }
+                currentTrack?.let { track ->
+                    val token = GlobalContext.Tokens.spotifyToken
+                    spotifyRepository.resume(
+                        track,
+                        playbackPosition.value,
+                        token
+                    )
+                }
+                startPositionPolling()
             }
         }
     }
+
 
     override fun seekTo(positionMs: Long) {
         if (currentSource == MusicSource.SOUNDCLOUD) {
@@ -311,12 +334,21 @@ class UnifiedAudioPlayer @Inject constructor(
         }
     }
 
-    override fun setCurrentRepeatMode(repeatMode: MusicPlayerRepeatMode) {
-        _currentRepeatMode = repeatMode
+    override fun setCurrentRepeatMode(mode: MusicPlayerRepeatMode) {
+        _currentRepeatMode = mode
         if (currentSource == MusicSource.SPOTIFY) {
             CoroutineScope(Dispatchers.IO).launch {
-                spotifyRepository.setRepeatMode(repeatMode, GlobalContext.Tokens.spotifyToken)
+                spotifyRepository.setRepeatMode(mode, GlobalContext.Tokens.spotifyToken)
             }
+        }
+    }
+
+    override fun stop() {
+        positionPollingJob?.cancel()
+        exoPlayer.stop()
+        release()
+        Intent(context, MusicPlaybackService::class.java).also { stopIntent ->
+            context.stopService(stopIntent)
         }
     }
 
@@ -338,11 +370,5 @@ class UnifiedAudioPlayer @Inject constructor(
                 }
             }
         }
-    }
-
-    private fun stop() {
-        positionPollingJob?.cancel()
-        exoPlayer.stop()
-        release()
     }
 }

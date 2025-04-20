@@ -20,7 +20,9 @@ interface SpotifyRepository {
     suspend fun searchPlaylistById(id: String, accessToken: String): Flow<Response<SpotifyPlaylistById>>
     suspend fun searchAlbumById(id: String, accessToken: String): Flow<Response<SpotifyAlbumByIdResponse>>
     suspend fun play(track: UnifiedTrack, accessToken: String)
-    suspend fun resume(accessToken: String)
+    suspend fun resume(track: UnifiedTrack,
+                       positionMs: Long,
+                       accessToken: String)
     suspend fun pause(accessToken: String)
     suspend fun seekTo(positionMs: Long, accessToken: String)
     suspend fun skipToNext(accessToken: String)

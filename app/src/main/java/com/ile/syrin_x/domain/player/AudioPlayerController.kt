@@ -13,6 +13,7 @@ interface AudioPlayerController {
     fun skipToPrevious()
     fun setCurrentRepeatMode(repeatMode: MusicPlayerRepeatMode)
     fun release()
+    fun stop()
 
     val isPlaying: StateFlow<Boolean>
     val playbackPosition: StateFlow<Long>

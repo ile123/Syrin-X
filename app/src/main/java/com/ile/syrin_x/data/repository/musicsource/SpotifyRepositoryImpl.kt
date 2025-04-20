@@ -132,22 +132,23 @@ class SpotifyRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun resume(accessToken: String) {
-        try {
-            if (GlobalContext.spotifyDeviceId.isEmpty()) {
-                getDeviceId("Bearer $accessToken")
-            }
-            val body = PlaybackRequestBody()
-            val response = api.startPlayback(
-                token = "Bearer $accessToken",
-                deviceId = GlobalContext.spotifyDeviceId,
-                body = body
-            )
-            if (!response.isSuccessful) {
-                Log.e("SpotifyPlayback", "Resume failed: ${response.code()} ${response.message()}")
-            }
-        } catch (e: Exception) {
-            Log.e("SpotifyPlayback", "Resume error: ${e.message}")
+    override suspend fun resume(track: UnifiedTrack,
+                                positionMs: Long,
+                                accessToken: String) {
+        if (GlobalContext.spotifyDeviceId.isEmpty()) {
+            getDeviceId("Bearer $accessToken")
+        }
+        val body = PlaybackRequestBody(
+            uris = listOf(track.playbackUrl),
+            position_ms = positionMs
+        )
+        val response = api.startPlayback(
+            token = "Bearer $accessToken",
+            deviceId = GlobalContext.spotifyDeviceId,
+            body = body
+        )
+        if (!response.isSuccessful) {
+            Log.e("SpotifyPlayback", "Resume track failed: ${response.code()} ${response.message()}")
         }
     }
 

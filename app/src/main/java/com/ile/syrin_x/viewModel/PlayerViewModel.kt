@@ -30,7 +30,7 @@ class PlayerViewModel @Inject constructor(
     val uiEvent = _uiEvent.asSharedFlow()
 
     sealed class PlayerUiEvent {
-        object ExpandPlayer : PlayerUiEvent()
+        data object ExpandPlayer : PlayerUiEvent()
     }
 
     fun setPlaylist(tracks: List<UnifiedTrack>, startIndex: Int = 0) {
@@ -41,6 +41,9 @@ class PlayerViewModel @Inject constructor(
     }
 
     fun playTrack(track: UnifiedTrack) {
+        if (currentTrack.value != null) {
+            audioPlayer.stop()
+        }
         currentTrack.value = track
         audioPlayer.play(track)
         viewModelScope.launch {
@@ -82,3 +85,4 @@ class PlayerViewModel @Inject constructor(
         super.onCleared()
     }
 }
+
