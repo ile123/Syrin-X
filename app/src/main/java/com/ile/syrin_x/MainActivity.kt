@@ -13,30 +13,33 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
-import androidx.lifecycle.MutableLiveData
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.ile.syrin_x.service.TokenMonitorService
 import com.ile.syrin_x.ui.navigation.SetUpNavigationGraph
+import com.ile.syrin_x.ui.screen.player.PlayerScaffold
 import com.ile.syrin_x.ui.theme.SyrinXTheme
-import com.ile.syrin_x.utils.extractAuthorizationCode
 import com.ile.syrin_x.viewModel.MusicSourceViewModel
+import com.ile.syrin_x.viewModel.PlayerViewModel
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
-    private val _intentData = MutableLiveData<Uri?>(null)
     private val musicSourceViewModel: MusicSourceViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
+            val viewModel: PlayerViewModel = hiltViewModel()
             SyrinXTheme {
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
-                ) {
-                    SetUpNavigationGraph()
+                PlayerScaffold(viewModel = viewModel) {
+                    Surface(
+                        modifier = Modifier.fillMaxSize(),
+                        color = MaterialTheme.colorScheme.background
+                    ) {
+                        SetUpNavigationGraph(viewModel)
+                    }
                 }
             }
         }
@@ -44,19 +47,24 @@ class MainActivity : ComponentActivity() {
         startTokenMonitorService()
     }
 
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        handleDeepLink(intent.data)
+    }
+
     private fun handleDeepLink(uri: Uri?) {
         uri?.let {
             when {
                 uri.toString().startsWith("syrinx://app/spotify") -> {
-                    val authorizationCode: String? = extractAuthorizationCode(uri)
-                    if (!authorizationCode.isNullOrEmpty()) {
-                        musicSourceViewModel.loginSpotify(authorizationCode, "syrinx://app/spotify")
+                    val authCode = extractAuthorizationCode(uri)
+                    if (!authCode.isNullOrEmpty()) {
+                        musicSourceViewModel.loginSpotify(authCode, "syrinx://app/spotify")
                     }
                 }
                 uri.toString().startsWith("syrinx://app") -> {
-                    val authorizationCode = extractAuthorizationCode(uri)
-                    if (!authorizationCode.isNullOrEmpty()) {
-                        musicSourceViewModel.loginSoundCloud(authorizationCode, "syrinx://app")
+                    val authCode = extractAuthorizationCode(uri)
+                    if (!authCode.isNullOrEmpty()) {
+                        musicSourceViewModel.loginSoundCloud(authCode, "syrinx://app")
                     }
                 }
             }
@@ -64,16 +72,12 @@ class MainActivity : ComponentActivity() {
         Log.d("DeepLink", "Received URI: $uri")
     }
 
-    override fun onNewIntent(intent: Intent) {
-        super.onNewIntent(intent)
-        _intentData.value = intent.data
-        handleDeepLink(intent.data)
-    }
-
     private fun startTokenMonitorService() {
         val intent = Intent(this, TokenMonitorService::class.java)
         ContextCompat.startForegroundService(this, intent)
     }
 
+    private fun extractAuthorizationCode(uri: Uri): String? {
+        return uri.getQueryParameter("code")
+    }
 }
-

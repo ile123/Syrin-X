@@ -7,6 +7,7 @@ import com.ile.syrin_x.data.model.soundcloud.SoundCloudPlaylistById
 import com.ile.syrin_x.data.model.soundcloud.SoundCloudPlaylistResponse
 import com.ile.syrin_x.data.model.soundcloud.SoundCloudTrackById
 import com.ile.syrin_x.data.model.soundcloud.SoundCloudTrackResponse
+import com.ile.syrin_x.data.model.soundcloud.SoundCloudTrackStreamableUrls
 import com.ile.syrin_x.data.model.soundcloud.SoundCloudUserResponse
 import retrofit2.http.Field
 import retrofit2.http.GET
@@ -62,4 +63,10 @@ interface SoundCloudApi {
         @Header("Authorization") authorization: String,
         @Path("id") id: String
     ): SoundCloudPlaylistById
+
+    @GET("tracks/{id}/streams")
+    suspend fun getSoundCloudTrackStreamableUrls(
+        @Header("Authorization") authorization: String,
+        @Path("id") id: String
+    ): SoundCloudTrackStreamableUrls
 }

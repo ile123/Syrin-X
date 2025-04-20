@@ -6,4 +6,5 @@ object GlobalContext {
         var soundCloudToken = ""
     }
     val loggedInMusicSources: MutableList<String> = mutableListOf()
+    var spotifyDeviceId = ""
 }

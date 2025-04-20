@@ -6,9 +6,14 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
@@ -21,24 +26,26 @@ import com.ile.syrin_x.viewModel.HomeViewModel
 fun HomeScreen(
     navHostController: NavHostController,
     homeViewModel: HomeViewModel = hiltViewModel(),
-    headerViewModel: HeaderViewModel = hiltViewModel()
+    headerViewModel: HeaderViewModel = hiltViewModel(),
 ) {
-        Scaffold(
-            modifier = Modifier.fillMaxSize(),
-            topBar = {
-                HeaderComponent(navHostController, headerViewModel)
-            },
-            bottomBar = {
-                BottomBarNavigationComponent(navHostController)
-            }
-        ) { innerPadding ->
-            Column(
-                modifier = Modifier
-                    .padding(innerPadding)
-                    .background(MaterialTheme.colorScheme.secondary)
-                    .verticalScroll(rememberScrollState())
-            ) {
 
-            }
+    Scaffold(
+        modifier = Modifier.fillMaxSize(),
+        topBar = {
+            HeaderComponent(navHostController, headerViewModel)
+        },
+        bottomBar = {
+            BottomBarNavigationComponent(navHostController)
         }
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .padding(innerPadding)
+                .background(MaterialTheme.colorScheme.secondary)
+                .verticalScroll(rememberScrollState())
+        ) {
+
+        }
+
+    }
 }

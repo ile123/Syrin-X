@@ -51,7 +51,7 @@ fun List<SpotifyTrackItem>.toSpotifyUnifiedTracks(): List<UnifiedTrack> = this
         durationMs = track.duration_ms,
         explicit = track.explicit,
         popularity = track.popularity,
-        playbackUrl = track.preview_url,
+        playbackUrl = "spotify:track:${track.id}",
         artworkUrl = track.album?.images?.firstOrNull()?.url ?: fallbackImageUrl,
         musicSource = MusicSource.SPOTIFY
     )
@@ -68,7 +68,7 @@ fun List<SoundCloudPlaylistTrack>.toSoundCloudPlaylistItemUnifiedTracks(): List<
             durationMs = track.duration.toInt(),
             explicit = null,
             popularity = track.playback_count.toInt(),
-            playbackUrl = track.permalink_url,
+            playbackUrl = "https://api.soundcloud.com/tracks/${track.id}/stream",
             artworkUrl = track.artwork_url ?: fallbackImageUrl,
             musicSource = MusicSource.SOUNDCLOUD
         )
@@ -138,7 +138,7 @@ fun List<SpotifyPlaylistByIdTrackItem>.toSpotifyPlaylistByIdTrackItemToUnifiedTr
             durationMs = x.track?.duration_ms,
             explicit = x.track?.explicit,
             popularity = x.track?.popularity,
-            playbackUrl = x.track?.preview_url,
+            playbackUrl = "spotify:track:${x.track?.id}",
             artworkUrl = x.track?.album?.images?.firstOrNull()?.url ?: fallbackImageUrl,
             musicSource = MusicSource.SPOTIFY
         )
@@ -160,7 +160,7 @@ fun fromSpotifyTrackToUnifiedTrack(spotifyTrackItem: SpotifyTrackDetails?): Unif
         durationMs = spotifyTrackItem?.duration_ms,
         explicit = spotifyTrackItem?.explicit,
         popularity = spotifyTrackItem?.popularity,
-        playbackUrl = spotifyTrackItem?.preview_url,
+        playbackUrl = "spotify:track:${id}",
         artworkUrl = spotifyTrackItem?.album?.images?.get(0)?.url ?: fallbackImageUrl,
         musicSource = MusicSource.SPOTIFY
     )
@@ -208,7 +208,7 @@ fun fromSpotifyPlaylistToUnifiedPlaylist(spotifyPlaylistById: SpotifyPlaylistByI
 
 fun fromSoundCloudPlaylistToUnifiedPlaylist(soundCloudPlaylistById: SoundCloudPlaylistById): UnifiedPlaylist {
     val id = soundCloudPlaylistById.id.toString()
-    val images = mutableListOf<SpotifyImage>(SpotifyImage(fallbackImageUrl, 0, 0))
+    val images = mutableListOf(SpotifyImage(fallbackImageUrl, 0, 0))
     if(soundCloudPlaylistById.artworkUrl != null) {
         images.clear()
         images.add(SpotifyImage(soundCloudPlaylistById.artworkUrl, 0, 0))

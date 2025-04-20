@@ -14,6 +14,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -39,13 +41,21 @@ import com.ile.syrin_x.R
 import com.ile.syrin_x.data.enums.MusicSource
 import com.ile.syrin_x.data.model.UnifiedTrack
 import com.ile.syrin_x.domain.core.Response
+import com.ile.syrin_x.ui.icon.MusicNoteIcon
+import com.ile.syrin_x.ui.icon.PlayIcon
 import com.ile.syrin_x.ui.screen.common.MyCircularProgress
 import com.ile.syrin_x.viewModel.TrackDetailsViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch
+import android.content.Context
+import android.content.Intent
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.ContextCompat
+import com.ile.syrin_x.viewModel.PlayerViewModel
 
 @Composable
 fun TrackDetailsScreen(
+    playerViewModel: PlayerViewModel,
     navHostController: NavHostController,
     trackId: String,
     musicSource: MusicSource,
@@ -88,7 +98,8 @@ fun TrackDetailsScreen(
                             hostState.showSnackbar(errorMessage)
                         }
                     },
-                    trackDetails = trackDetailsViewModel.trackDetails
+                    trackDetails = trackDetailsViewModel.trackDetails,
+                    playerViewModel = playerViewModel
                 )
             }
         }
@@ -115,7 +126,8 @@ fun Content(
     searchFlowState: MutableSharedFlow<Response<Any>>,
     searchSuccess: () -> Unit,
     searchError: (error: String) -> Unit,
-    trackDetails: UnifiedTrack?
+    trackDetails: UnifiedTrack?,
+    playerViewModel: PlayerViewModel
 ) {
     Column(
         modifier = Modifier
@@ -136,6 +148,18 @@ fun Content(
         }
 
         Spacer(modifier = Modifier.height(16.dp))
+
+        IconButton(onClick = {
+            if (trackDetails != null) {
+                playerViewModel.playTrack(trackDetails)
+            }
+        }) {
+            Icon(
+                PlayIcon,
+                contentDescription = "Play Song",
+                modifier = Modifier.size(30.dp)
+            )
+        }
 
         Text(
             text = trackDetails?.title ?: "Unknown Title",

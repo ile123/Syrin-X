@@ -2,6 +2,7 @@ package com.ile.syrin_x.ui.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
+import androidx.compose.runtime.remember
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -20,12 +21,14 @@ import com.ile.syrin_x.ui.screen.RegisterScreen
 import com.ile.syrin_x.ui.screen.SearchResultScreen
 import com.ile.syrin_x.ui.screen.SearchScreen
 import com.ile.syrin_x.ui.screen.TrackDetailsScreen
+import com.ile.syrin_x.viewModel.PlayerViewModel
 import com.ile.syrin_x.viewModel.SearchViewModel
 
 @Composable
 fun SetUpNavigationGraph(
+    playerViewModel: PlayerViewModel,
     navHostController: NavHostController = rememberNavController(),
-    authenticationNavigationViewModel: AuthenticationNavigationViewModel = hiltViewModel()
+    authenticationNavigationViewModel: AuthenticationNavigationViewModel = hiltViewModel(),
 ) {
 
     NavHost(
@@ -60,16 +63,19 @@ fun SetUpNavigationGraph(
             route = NavigationGraph.SearchNavGraph.route,
             startDestination = NavigationGraph.SearchScreen.route
         ) {
-            composable(
-                route = NavigationGraph.SearchScreen.route
-            ) {
-                val searchViewModel: SearchViewModel = hiltViewModel(navHostController.getBackStackEntry(NavigationGraph.SearchNavGraph.route))
+            composable(route = NavigationGraph.SearchScreen.route) { navBackStackEntry ->
+                val parentEntry = remember(navBackStackEntry) {
+                    navHostController.getBackStackEntry(NavigationGraph.SearchNavGraph.route)
+                }
+                val searchViewModel: SearchViewModel = hiltViewModel(parentEntry)
                 SearchScreen(navHostController, searchViewModel)
             }
-            composable(
-                route = NavigationGraph.SearchResultScreen.route
-            ) {
-                val searchViewModel: SearchViewModel = hiltViewModel(navHostController.getBackStackEntry(NavigationGraph.SearchNavGraph.route))
+
+            composable(route = NavigationGraph.SearchResultScreen.route) { navBackStackEntry ->
+                val parentEntry = remember(navBackStackEntry) {
+                    navHostController.getBackStackEntry(NavigationGraph.SearchNavGraph.route)
+                }
+                val searchViewModel: SearchViewModel = hiltViewModel(parentEntry)
                 SearchResultScreen(navHostController, searchViewModel)
             }
         }
@@ -83,9 +89,11 @@ fun SetUpNavigationGraph(
         ) {
             val trackId = it.arguments?.getString("trackId") ?: ""
             val musicSourceString = it.arguments?.getString("musicSource") ?: ""
+
             val musicSource = MusicSource.valueOf(musicSourceString)
 
             TrackDetailsScreen(
+                playerViewModel,
                 navHostController = navHostController,
                 trackId = trackId,
                 musicSource = musicSource
@@ -104,6 +112,7 @@ fun SetUpNavigationGraph(
             val musicSource = MusicSource.valueOf(musicSourceString)
 
             PlaylistDetailsScreen(
+                playerViewModel,
                 navHostController = navHostController,
                 playlistId = playlistId,
                 musicSource = musicSource
@@ -122,6 +131,7 @@ fun SetUpNavigationGraph(
             val musicSource = MusicSource.valueOf(musicSourceString)
 
             AlbumDetailsScreen(
+                playerViewModel,
                 navHostController,
                 albumId,
                 musicSource

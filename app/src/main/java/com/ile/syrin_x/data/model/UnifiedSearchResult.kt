@@ -1,10 +1,13 @@
 package com.ile.syrin_x.data.model
 
+import android.os.Parcelable
 import androidx.compose.runtime.Immutable
 import com.ile.syrin_x.data.enums.MusicSource
 import com.ile.syrin_x.data.model.spotify.SpotifyImage
+import kotlinx.parcelize.Parcelize
 
 @Immutable
+@Parcelize
 data class UnifiedTrack(
     val id: String,
     val title: String?,
@@ -14,10 +17,10 @@ data class UnifiedTrack(
     val durationMs: Int?,
     val explicit: Boolean?,
     val popularity: Int?,
-    val playbackUrl: String?,
+    var playbackUrl: String?,
     val artworkUrl: String?,
     val musicSource: MusicSource
-)
+): Parcelable
 
 @Immutable
 data class UnifiedPlaylist(

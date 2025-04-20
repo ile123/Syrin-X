@@ -61,7 +61,13 @@ fun MusicSourceScreen(
                 val authorizationUrl = getSpotifyAuthorizationUrl(
                     EnvLoader.spotifyClientId,
                     "syrinx://app/spotify",
-                    listOf("user-read-private", "user-read-email")
+                    listOf(
+                        "user-read-private",
+                        "user-read-email",
+                        "user-modify-playback-state",
+                        "user-read-playback-state",
+                        "streaming"
+                    )
                 )
                 val intent = Intent(Intent.ACTION_VIEW, authorizationUrl.toUri()).apply {
                     addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY)

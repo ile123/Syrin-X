@@ -18,9 +18,6 @@
 - **Shuffle & Repeat**: Enable shuffle play or repeat mode for playlists.
 - **Background Music**: Music continues to play in the background with control via notifications.
 
-## Offline Mode (Premium)
-- **Offline Mode**: Download songs for offline listening (available only for Premium users and if the music source allows it).
-
 ## Playlists & Customization
 - **Playlist Creation & Management**: Create, manage, and control your playlists.
 - **Favorites**: Mark songs as favorites for easy access.
@@ -40,11 +37,11 @@
 ---
 
 ## Optional Features
-- **Offline Mode**: Available only for Premium users.
+- **Offline Mode**: Download songs for offline listening (available only for Premium users and if the music source allows it). Available only for Premium users.
 - **Personalized Playlists**: This feature is optional and can be implemented if not too complex.
 - **Local Storage**: Storing downloaded songs and favorites locally is optional.
 - **Song Preview**: Listen to song previews. (Snippet of song is played)
 
 ## IMPORTANT
 
-- **Spotify**: In order to use spotify in this app, you need to have the spotify app installed on the phone so the music can play.
+- **Spotify**: In order to use spotify in this app, you need to have the spotify app installed on the phone, it has to be open in the background and you need to have premium in order to play songs/playlists/albums.
