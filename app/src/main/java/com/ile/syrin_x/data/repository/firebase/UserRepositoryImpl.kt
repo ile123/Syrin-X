@@ -30,7 +30,7 @@ class UserRepositoryImpl @Inject constructor(
                 .child("users")
                 .child(userId)
 
-            suspendCoroutine<Unit> { continuation ->
+            suspendCoroutine { continuation ->
                 usersRef.setValue(newUser)
                     .addOnCompleteListener { task ->
                         if (task.isSuccessful) {

@@ -4,7 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
-import com.ile.syrin_x.data.model.soundcloud.SoundCloudUserToken
+import com.ile.syrin_x.data.model.entity.SoundCloudUserToken
 
 @Dao
 interface SoundCloudDao {
