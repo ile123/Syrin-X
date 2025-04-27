@@ -6,5 +6,3 @@ data class UserCreatedPlaylist(
     val name: String,
     val tracks: List<UserCreatedPlaylistTrack>
 )
-
-//Nekako tracks mora biti UserCreatedPlaylistTrack i UnitedTrack

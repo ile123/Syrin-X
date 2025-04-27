@@ -10,10 +10,12 @@ class Converters {
     private val gson = Gson()
 
     @TypeConverter
-    fun fromMusicSource(musicSource: MusicSource): String = musicSource.toString()
+    fun fromMusicSource(musicSource: MusicSource): String =
+        musicSource.name
 
     @TypeConverter
-    fun toMusicSource(musicSourceString: String): MusicSource = MusicSource.valueOf(musicSourceString)
+    fun toMusicSource(musicSourceString: String): MusicSource =
+        MusicSource.valueOf(musicSourceString)
 
     @TypeConverter
     fun fromLocalDate(date: LocalDate?): String? =
@@ -31,6 +33,6 @@ class Converters {
     fun toStringList(json: String?): List<String>? =
         json?.let {
             val type = object : TypeToken<List<String>>() {}.type
-            gson.fromJson<List<String>>(it, type)
+            gson.fromJson(it, type)
         }
 }

@@ -58,7 +58,7 @@ fun BottomBarNavigationComponent(navHostController: NavHostController) {
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier.weight(1f)
             ) {
-                IconButton(onClick = { /* do something */ }) {
+                IconButton(onClick = { navHostController.navigate(NavigationGraph.UserCreatedPlaylistScreen.route) }) {
                     Icon(
                         CollectionIcon,
                         contentDescription = "Library",

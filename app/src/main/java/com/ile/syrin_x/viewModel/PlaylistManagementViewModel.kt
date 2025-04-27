@@ -1,6 +1,7 @@
 package com.ile.syrin_x.viewModel
 
 import android.util.Log
+import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ile.syrin_x.data.enums.UserCreatedPlaylistTrackAction
@@ -37,8 +38,8 @@ class PlaylistManagementViewModel @Inject constructor(
     private val updateUserCreatedPlaylistUseCase: UpdateUserCreatedPlaylistUseCase
 ) : ViewModel() {
 
-    val userPlaylists = mutableListOf<UserCreatedPlaylist>()
-    val userFavoriteTracks = mutableListOf<FavoriteTrack>()
+    val userPlaylists = mutableStateListOf<UserCreatedPlaylist>()
+    val userFavoriteTracks = mutableStateListOf<FavoriteTrack>()
 
     private val _dataFlow = MutableSharedFlow<Response<Any>>()
     val dataFlow = _dataFlow

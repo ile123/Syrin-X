@@ -246,18 +246,18 @@ fun SearchState(
         searchFlowState.collect {
             when(it) {
                 is Response.Loading -> {
-                    Log.i("Search state -> ", "Loading")
+                    Log.i("Search state", "Loading")
                     isLoading.value = true
                 }
 
                 is Response.Error -> {
-                    Log.e("Search state -> ", it.message)
+                    Log.e("Search state", it.message)
                     isLoading.value = false
                     onError(it.message)
                 }
 
                 is Response.Success -> {
-                    Log.i("Search state -> ", "Success")
+                    Log.i("Search state", "Success")
                     isLoading.value = false
                     onSuccess()
                 }

@@ -37,10 +37,10 @@ class UserCreatedPlaylistRepositoryImpl @Inject constructor(
         trySend(Response.Loading)
 
         val localJob = launch {
-            playlistDao.getAllForUserWithTracks(userId).collect { pwList ->
-                val domain = pwList.map { it.toDomain() }
-                trySend(Response.Success(domain))
-            }
+            playlistDao.getAllForUserWithTracks(userId)
+                .collect { pwList ->
+                    trySend(Response.Success(pwList.map { it.toDomain() }))
+                }
         }
 
         val ref = db.getReference("users/$userId/playlists")
@@ -56,15 +56,16 @@ class UserCreatedPlaylistRepositoryImpl @Inject constructor(
                     val remotePlaylists = snapshot.children.mapNotNull { snap ->
                         snap.getValue(RemotePlaylist::class.java)
                     }
+
                     remotePlaylists.forEach { rp ->
                         val pe = UserCreatedPlaylistEntity(
                             userCreatedPlaylistId = rp.userCreatedPlaylistId,
                             userId = rp.userId,
-                            name = rp.name,
-                            dateAdded = LocalDate.parse(rp.dateAdded)
+                            name = rp.name
                         )
                         playlistDao.insertPlaylist(pe)
-                        rp.tracks.forEach { rt ->
+
+                        rp.tracks.values.forEach { rt ->
                             val te = UserCreatedPlaylistTrackEntity(
                                 userCreatedPlaylistTrackId = rt.userCreatedPlaylistTrackId,
                                 playlistId = rp.userCreatedPlaylistId,
@@ -79,8 +80,7 @@ class UserCreatedPlaylistRepositoryImpl @Inject constructor(
                                 playbackUrl = rt.playbackUrl,
                                 artworkUrl = rt.artworkUrl,
                                 musicSource = rt.musicSource,
-                                timePlayed = rt.timePlayed,
-                                dateCreated = LocalDate.parse(rt.dateCreated)
+                                timePlayed = rt.timePlayed
                             )
                             trackDao.insertTrack(te)
                         }
@@ -99,6 +99,7 @@ class UserCreatedPlaylistRepositoryImpl @Inject constructor(
             localJob.cancel()
         }
     }
+
 
     override suspend fun getUserCreatedPlaylistById(
         playlistId: String
@@ -123,21 +124,18 @@ class UserCreatedPlaylistRepositoryImpl @Inject constructor(
         try {
             val pushRef = db.getReference("users/$userId/playlists").push()
             val newId = pushRef.key!!
-            val nowStr = LocalDate.now().toString()
 
             val remote = RemotePlaylist(
                 userCreatedPlaylistId = newId,
                 userId = userId,
                 name = name,
-                dateAdded = nowStr,
-                tracks = emptyList()
+                tracks = emptyMap()
             )
             playlistDao.insertPlaylist(
                 UserCreatedPlaylistEntity(
                     userCreatedPlaylistId = newId,
                     userId = userId,
-                    name = name,
-                    dateAdded = LocalDate.parse(nowStr)
+                    name = name
                 )
             )
             pushRef.setValue(remote).await()
@@ -213,8 +211,7 @@ class UserCreatedPlaylistRepositoryImpl @Inject constructor(
                             playbackUrl = remoteTrack.playbackUrl,
                             artworkUrl = remoteTrack.artworkUrl,
                             musicSource = remoteTrack.musicSource,
-                            timePlayed = remoteTrack.timePlayed,
-                            dateCreated = LocalDate.parse(nowStr)
+                            timePlayed = remoteTrack.timePlayed
                         )
                     )
                     ref.child(track.id).setValue(remoteTrack).await()
@@ -252,8 +249,7 @@ class UserCreatedPlaylistRepositoryImpl @Inject constructor(
         val userCreatedPlaylistId: String = "",
         val userId: String = "",
         val name: String = "",
-        val dateAdded: String = "",
-        val tracks: List<RemotePlaylistTrack> = emptyList()
+        val tracks: Map<String, RemotePlaylistTrack> = emptyMap()
     )
 
     data class RemotePlaylistTrack(

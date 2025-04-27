@@ -2,12 +2,13 @@ package com.ile.syrin_x.data.model.entity
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import com.google.firebase.database.IgnoreExtraProperties
 import java.time.LocalDate
 
+@IgnoreExtraProperties
 @Entity
 data class UserCreatedPlaylistEntity(
-    @PrimaryKey val userCreatedPlaylistId: String,
-    val userId: String,
-    val name: String,
-    val dateAdded: LocalDate
+    @PrimaryKey var userCreatedPlaylistId: String = "",
+    var userId: String = "",
+    var name: String = ""
 )

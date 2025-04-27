@@ -135,8 +135,7 @@ class FavoriteTrackRepositoryImpl @Inject constructor(
                             userId = userId,
                             name = title,
                             artist = artist,
-                            musicSource = track.musicSource,
-                            dateCreated = LocalDate.now()
+                            musicSource = track.musicSource
                         )
                     }
                 }

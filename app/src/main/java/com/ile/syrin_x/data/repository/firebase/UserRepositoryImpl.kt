@@ -22,7 +22,8 @@ class UserRepositoryImpl @Inject constructor(
             val newUser = mapOf(
                 "userName" to userName,
                 "fullName" to fullName,
-                "email" to email
+                "email" to email,
+                "premium" to false
             )
 
             val usersRef = db

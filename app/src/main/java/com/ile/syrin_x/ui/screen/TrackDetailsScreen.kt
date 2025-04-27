@@ -1,6 +1,5 @@
 package com.ile.syrin_x.ui.screen
 
-import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,14 +11,13 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -29,7 +27,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -41,17 +38,19 @@ import com.ile.syrin_x.R
 import com.ile.syrin_x.data.enums.MusicSource
 import com.ile.syrin_x.data.model.UnifiedTrack
 import com.ile.syrin_x.domain.core.Response
-import com.ile.syrin_x.ui.icon.MusicNoteIcon
-import com.ile.syrin_x.ui.icon.PlayIcon
 import com.ile.syrin_x.ui.screen.common.MyCircularProgress
 import com.ile.syrin_x.viewModel.TrackDetailsViewModel
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.launch
-import android.content.Context
-import android.content.Intent
-import androidx.compose.ui.platform.LocalContext
-import androidx.core.content.ContextCompat
 import com.ile.syrin_x.viewModel.PlayerViewModel
+import com.ile.syrin_x.viewModel.PlaylistManagementViewModel
+
+import androidx.compose.foundation.layout.*
+import androidx.compose.material.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.runtime.*
+import com.ile.syrin_x.ui.screen.common.AddTrackToPlaylistModal
 
 @Composable
 fun TrackDetailsScreen(
@@ -59,75 +58,90 @@ fun TrackDetailsScreen(
     navHostController: NavHostController,
     trackId: String,
     musicSource: MusicSource,
-    trackDetailsViewModel: TrackDetailsViewModel = hiltViewModel()
+    trackDetailsViewModel: TrackDetailsViewModel = hiltViewModel(),
+    playlistManagementViewModel: PlaylistManagementViewModel = hiltViewModel()
 ) {
     LaunchedEffect(trackId, musicSource) {
         trackDetailsViewModel.getTrackDetails(trackId, musicSource)
+        playlistManagementViewModel.getAllUserFavoriteTracks()
     }
 
-    val trackDetailsState = trackDetailsViewModel.searchFlow.collectAsState(initial = Response.Loading)
+    val trackDetailsState by trackDetailsViewModel.searchFlow.collectAsState(initial = Response.Loading)
+    val favorites = playlistManagementViewModel.userFavoriteTracks
 
-    val scope = rememberCoroutineScope()
-    val hostState = remember { SnackbarHostState() }
+    var showAddPlaylistDialog by remember { mutableStateOf(false) }
 
     Scaffold(
-        snackbarHost = { SnackbarHost(hostState = hostState) },
         modifier = Modifier.fillMaxSize()
     ) { paddingValues ->
         Image(
             painter = painterResource(id = R.drawable.background_image_1),
-            contentDescription = "Background image",
+            contentDescription = null,
             contentScale = ContentScale.FillBounds,
             modifier = Modifier.fillMaxSize()
         )
 
-        when (val state = trackDetailsState.value) {
-            is Response.Loading -> {
-                LoadingState()
-            }
-            is Response.Error -> {
-                ErrorState(errorMessage = state.message)
-            }
+        when (val state = trackDetailsState) {
+            is Response.Loading -> LoadingState()
+            is Response.Error   -> ErrorState(errorMessage = state.message)
             is Response.Success -> {
+                val track = trackDetailsViewModel.trackDetails
                 Content(
                     paddingValues = paddingValues,
-                    searchFlowState = trackDetailsViewModel.searchFlow,
-                    searchSuccess = {},
-                    searchError = { errorMessage ->
-                        scope.launch {
-                            hostState.showSnackbar(errorMessage)
-                        }
+                    track = track,
+                    playerViewModel = playerViewModel,
+                    onAddToPlaylist = { showAddPlaylistDialog = true },
+                    onToggleFavorite = {
+                        track?.let { playlistManagementViewModel.addOrRemoveTrackFromFavorites(it) }
                     },
-                    trackDetails = trackDetailsViewModel.trackDetails,
-                    playerViewModel = playerViewModel
+                    isFavorite = track != null && favorites.any { it.favoriteTrackId == track.id }
                 )
             }
+        }
+    }
+
+    if (showAddPlaylistDialog) {
+        trackDetailsViewModel.trackDetails?.let { track ->
+            AddTrackToPlaylistModal(
+                track = track,
+                onDismiss = { showAddPlaylistDialog = false },
+                title = "Add to Playlist",
+                confirmButtonText = "Done",
+                dismissButtonText = "Cancel",
+                cancelable = true
+            )
         }
     }
 }
 
 @Composable
 fun LoadingState() {
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
         MyCircularProgress()
     }
 }
 
 @Composable
 fun ErrorState(errorMessage: String) {
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
         Text(text = "Error: $errorMessage", color = Color.Red)
     }
 }
 
 @Composable
-fun Content(
+private fun Content(
     paddingValues: PaddingValues,
-    searchFlowState: MutableSharedFlow<Response<Any>>,
-    searchSuccess: () -> Unit,
-    searchError: (error: String) -> Unit,
-    trackDetails: UnifiedTrack?,
-    playerViewModel: PlayerViewModel
+    track: UnifiedTrack?,
+    playerViewModel: PlayerViewModel,
+    onAddToPlaylist: () -> Unit,
+    onToggleFavorite: () -> Unit,
+    isFavorite: Boolean
 ) {
     Column(
         modifier = Modifier
@@ -135,10 +149,10 @@ fun Content(
             .padding(paddingValues)
             .verticalScroll(rememberScrollState())
     ) {
-        trackDetails?.artworkUrl?.let { artworkUrl ->
+        track?.artworkUrl?.let { url ->
             AsyncImage(
-                model = artworkUrl,
-                contentDescription = artworkUrl,
+                model = url,
+                contentDescription = null,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(250.dp)
@@ -147,132 +161,97 @@ fun Content(
             )
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(Modifier.height(16.dp))
 
-        IconButton(onClick = {
-            if (trackDetails != null) {
-                playerViewModel.playTrack(trackDetails)
-            }
-        }) {
+        IconButton(onClick = { track?.let { playerViewModel.playTrack(it) } }) {
             Icon(
-                PlayIcon,
-                contentDescription = "Play Song",
+                imageVector = Icons.Default.PlayArrow,
+                contentDescription = "Play",
                 modifier = Modifier.size(30.dp)
             )
         }
 
         Text(
-            text = trackDetails?.title ?: "Unknown Title",
-            style = MaterialTheme.typography.headlineMedium,
+            text = track?.title.orEmpty(),
+            style = MaterialTheme.typography.bodyMedium,
             modifier = Modifier.padding(horizontal = 16.dp)
         )
 
-        trackDetails?.albumName?.let {
+        track?.albumName?.let {
             Text(
                 text = it,
                 style = MaterialTheme.typography.bodyLarge,
-                modifier = Modifier
-                    .padding(horizontal = 16.dp)
-                    .padding(top = 8.dp),
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
             )
         }
 
-        trackDetails?.artists?.let {
+        track?.artists?.let {
             Text(
                 text = it.joinToString(", "),
                 style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier
-                    .padding(horizontal = 16.dp)
-                    .padding(top = 8.dp),
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
             )
         }
 
-        trackDetails?.genre?.let {
+        track?.genre?.let {
             Text(
                 text = "Genre: $it",
                 style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier
-                    .padding(horizontal = 16.dp)
-                    .padding(top = 8.dp),
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
             )
         }
-
-        trackDetails?.durationMs?.let {
+        track?.durationMs?.let {
             Text(
                 text = "Duration: ${formatDuration(it)}",
                 style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier
-                    .padding(horizontal = 16.dp)
-                    .padding(top = 8.dp),
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
             )
         }
-
         Text(
-            text = if (trackDetails?.explicit == true) "Explicit Content" else "Clean Content",
+            text = if (track?.explicit == true) "Explicit Content" else "Clean Content",
             style = MaterialTheme.typography.bodyMedium,
-            color = if (trackDetails?.explicit == true) Color.Red else Color.Gray,
-            modifier = Modifier
-                .padding(horizontal = 16.dp)
-                .padding(top = 8.dp),
+            color = if (track?.explicit == true) Color.Red else Color.Gray,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
         )
-
-        trackDetails?.popularity?.let {
+        track?.popularity?.let {
             Text(
                 text = "Popularity: $it",
                 style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier
-                    .padding(horizontal = 16.dp)
-                    .padding(top = 8.dp),
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
             )
         }
 
-        trackDetails?.playbackUrl?.let {
+        Spacer(Modifier.height(24.dp))
+
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(24.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp)
+        ) {
+            IconButton(onClick = onAddToPlaylist) {
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = "Add to Playlist"
+                )
+            }
+            IconButton(onClick = onToggleFavorite) {
+                Icon(
+                    imageVector = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                    contentDescription = "Toggle Favorite",
+                    tint = if (isFavorite) Color.Red else LocalContentColor.current
+                )
+            }
+        }
+
+        Spacer(Modifier.height(16.dp))
+
+        track?.playbackUrl?.let {
             Text(
                 text = "Playback URL: $it",
                 style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier
-                    .padding(horizontal = 16.dp)
-                    .padding(top = 8.dp),
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
             )
-        }
-
-    }
-
-    SearchState(
-        searchFlowState = searchFlowState,
-        onSuccess = { searchSuccess() },
-        onError = { error -> searchError(error) }
-    )
-}
-
-@Composable
-fun TrackDetailsState(
-    trackDetailsFlowState: MutableSharedFlow<Response<Any>>,
-    onSuccess: () -> Unit,
-    onError: (error: String) -> Unit
-) {
-    val isLoading = remember { mutableStateOf(false) }
-    if (isLoading.value) MyCircularProgress()
-    LaunchedEffect(Unit) {
-        trackDetailsFlowState.collect {
-            when(it) {
-                is Response.Loading -> {
-                    Log.i("Track Details State", "Loading")
-                    isLoading.value = true
-                }
-
-                is Response.Error -> {
-                    Log.e("Track Details State", it.message)
-                    isLoading.value = false
-                    onError(it.message)
-                }
-
-                is Response.Success -> {
-                    Log.i("Track Details State", "Success")
-                    isLoading.value = false
-                    onSuccess()
-                }
-            }
         }
     }
 }
