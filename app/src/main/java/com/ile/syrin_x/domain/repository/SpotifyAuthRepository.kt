@@ -1,6 +1,6 @@
 package com.ile.syrin_x.domain.repository
 
-import com.ile.syrin_x.data.model.spotify.SpotifyUserToken
+import com.ile.syrin_x.data.model.entity.SpotifyUserToken
 
 interface SpotifyAuthRepository {
     suspend fun getToken(userUuid: String, authorization: String, code: String, redirectUri: String): SpotifyUserToken?

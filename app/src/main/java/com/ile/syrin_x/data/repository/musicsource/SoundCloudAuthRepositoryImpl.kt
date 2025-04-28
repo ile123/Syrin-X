@@ -3,7 +3,7 @@ package com.ile.syrin_x.data.repository.musicsource
 import android.util.Log
 import com.ile.syrin_x.data.api.SoundCloudAuthApi
 import com.ile.syrin_x.data.database.SoundCloudDao
-import com.ile.syrin_x.data.model.soundcloud.SoundCloudUserToken
+import com.ile.syrin_x.data.model.entity.SoundCloudUserToken
 import com.ile.syrin_x.domain.repository.SoundCloudAuthRepository
 import com.ile.syrin_x.utils.EnvLoader
 import com.ile.syrin_x.utils.GlobalContext

@@ -11,4 +11,6 @@ sealed class NavigationGraph(val route: String) {
     data object TrackDetailsScreen: NavigationGraph(route = "track_details_screen")
     data object PlaylistDetailsScreen: NavigationGraph(route = "playlist_details_screen")
     data object AlbumDetailsScreen: NavigationGraph(route = "album_details_screen")
+    data object UserCreatedPlaylistScreen: NavigationGraph(route = "user_created_playlist_screen")
+    data object UserCreatedPlaylistDetailsScreen: NavigationGraph(route = "user_created_playlist_details_screen")
 }

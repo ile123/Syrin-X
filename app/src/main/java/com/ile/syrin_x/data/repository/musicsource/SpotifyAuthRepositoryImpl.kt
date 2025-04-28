@@ -3,7 +3,7 @@ package com.ile.syrin_x.data.repository.musicsource
 import android.util.Log
 import com.ile.syrin_x.data.api.SpotifyAuthApi
 import com.ile.syrin_x.data.database.SpotifyDao
-import com.ile.syrin_x.data.model.spotify.SpotifyUserToken
+import com.ile.syrin_x.data.model.entity.SpotifyUserToken
 import com.ile.syrin_x.domain.repository.SpotifyAuthRepository
 import com.ile.syrin_x.utils.EnvLoader
 import com.ile.syrin_x.utils.GlobalContext

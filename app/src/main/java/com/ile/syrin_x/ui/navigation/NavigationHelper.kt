@@ -1,7 +1,6 @@
 package com.ile.syrin_x.ui.navigation
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.Stable
 import androidx.compose.runtime.remember
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
@@ -21,6 +20,8 @@ import com.ile.syrin_x.ui.screen.RegisterScreen
 import com.ile.syrin_x.ui.screen.SearchResultScreen
 import com.ile.syrin_x.ui.screen.SearchScreen
 import com.ile.syrin_x.ui.screen.TrackDetailsScreen
+import com.ile.syrin_x.ui.screen.UserCreatedPlaylistsScreen
+import com.ile.syrin_x.ui.screen.UserCreatedPlaylistDetailsScreen
 import com.ile.syrin_x.viewModel.PlayerViewModel
 import com.ile.syrin_x.viewModel.SearchViewModel
 
@@ -57,6 +58,21 @@ fun SetUpNavigationGraph(
             route = NavigationGraph.MusicSourceScreen.route
         ) {
             MusicSourceScreen()
+        }
+
+        composable(
+            route = NavigationGraph.UserCreatedPlaylistScreen.route
+        ) {
+            UserCreatedPlaylistsScreen(navHostController)
+        }
+        composable(
+            route = NavigationGraph.UserCreatedPlaylistDetailsScreen.route + "/{userCreatedPlaylistId}",
+            arguments = listOf(
+                navArgument("userCreatedPlaylistId") { type = NavType.StringType }
+            )
+        ) {
+            val userCreatedPlaylistId = it.arguments?.getString("userCreatedPlaylistId")
+            UserCreatedPlaylistDetailsScreen(playerViewModel, navHostController, userCreatedPlaylistId)
         }
 
         navigation(

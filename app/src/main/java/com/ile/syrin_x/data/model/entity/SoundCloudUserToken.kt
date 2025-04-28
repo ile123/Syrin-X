@@ -1,4 +1,4 @@
-package com.ile.syrin_x.data.model.soundcloud
+package com.ile.syrin_x.data.model.entity
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey

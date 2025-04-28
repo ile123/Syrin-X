@@ -22,7 +22,8 @@ class UserRepositoryImpl @Inject constructor(
             val newUser = mapOf(
                 "userName" to userName,
                 "fullName" to fullName,
-                "email" to email
+                "email" to email,
+                "premium" to false
             )
 
             val usersRef = db
@@ -30,7 +31,7 @@ class UserRepositoryImpl @Inject constructor(
                 .child("users")
                 .child(userId)
 
-            suspendCoroutine<Unit> { continuation ->
+            suspendCoroutine { continuation ->
                 usersRef.setValue(newUser)
                     .addOnCompleteListener { task ->
                         if (task.isSuccessful) {

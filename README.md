@@ -24,8 +24,7 @@
   
 ## Music Discovery & Trends
 - **Top Charts**: View currently trending and most popular songs.
-- **Artist Follow**: Track your favorite artists and receive notifications about new releases.
-- **New Release Notifications**: Get notified when your followed artists release new music.
+- **Artist Follow**: Track your favorite artists.
 
 ## User Interface Customization
 - **Dark Mode**: Switch to dark mode for better night-time viewing.

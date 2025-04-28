@@ -1,6 +1,6 @@
 package com.ile.syrin_x.domain.usecase.musicsource.soundcloud
 
-import com.ile.syrin_x.data.model.soundcloud.SoundCloudUserToken
+import com.ile.syrin_x.data.model.entity.SoundCloudUserToken
 import com.ile.syrin_x.domain.repository.SoundCloudAuthRepository
 import javax.inject.Inject
 
