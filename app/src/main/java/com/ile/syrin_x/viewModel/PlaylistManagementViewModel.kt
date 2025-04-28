@@ -187,7 +187,7 @@ class PlaylistManagementViewModel @Inject constructor(
                 is Response.Loading -> { /* no-op */ }
                 is Response.Success<*> -> {
                     val playlist = response.data as UserCreatedPlaylist
-                    // Navigate to playlist details screen here
+                    _dataFlow.emit(Response.Success(playlist))
                 }
 
                 else -> {}

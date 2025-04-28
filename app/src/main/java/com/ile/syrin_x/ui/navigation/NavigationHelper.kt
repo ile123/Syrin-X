@@ -66,9 +66,13 @@ fun SetUpNavigationGraph(
             UserCreatedPlaylistsScreen(navHostController)
         }
         composable(
-            route = NavigationGraph.UserCreatedPlaylistDetailsScreen.route
+            route = NavigationGraph.UserCreatedPlaylistDetailsScreen.route + "/{userCreatedPlaylistId}",
+            arguments = listOf(
+                navArgument("userCreatedPlaylistId") { type = NavType.StringType }
+            )
         ) {
-            UserCreatedPlaylistDetailsScreen(playerViewModel, navHostController)
+            val userCreatedPlaylistId = it.arguments?.getString("userCreatedPlaylistId")
+            UserCreatedPlaylistDetailsScreen(playerViewModel, navHostController, userCreatedPlaylistId)
         }
 
         navigation(

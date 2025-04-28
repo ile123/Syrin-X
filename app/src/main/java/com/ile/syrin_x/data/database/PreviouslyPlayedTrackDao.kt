@@ -5,6 +5,7 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Update
 import com.ile.syrin_x.data.model.entity.PreviouslyPlayedTrackEntity
 import kotlinx.coroutines.flow.Flow
 
@@ -15,6 +16,9 @@ interface PreviouslyPlayedTrackDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(previouslyPlayedTrackEntities: List<PreviouslyPlayedTrackEntity>)
+
+    @Update
+    suspend fun update(previouslyPlayedTrackEntity: PreviouslyPlayedTrackEntity)
 
     @Delete
     suspend fun delete(previouslyPlayedTrackEntity: PreviouslyPlayedTrackEntity)

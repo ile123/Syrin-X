@@ -19,5 +19,6 @@ data class PreviouslyPlayedTrackEntity(
     var popularity: Int? = null,
     var playbackUrl: String? = null,
     var artworkUrl: String? = null,
-    var musicSource: MusicSource = MusicSource.SPOTIFY
+    var musicSource: MusicSource = MusicSource.SPOTIFY,
+    val timesPlayed: Long = 0
 )

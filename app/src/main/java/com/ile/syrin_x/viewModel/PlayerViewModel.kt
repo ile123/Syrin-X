@@ -1,10 +1,13 @@
 package com.ile.syrin_x.viewModel
 
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ile.syrin_x.data.enums.MusicPlayerRepeatMode
 import com.ile.syrin_x.data.model.UnifiedTrack
 import com.ile.syrin_x.domain.player.UnifiedAudioPlayer
+import com.ile.syrin_x.domain.repository.PreviouslyPlayedTrackRepository
+import com.ile.syrin_x.domain.usecase.auth.GetUserUidUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -15,7 +18,9 @@ import javax.inject.Inject
 
 @HiltViewModel
 class PlayerViewModel @Inject constructor(
-    val audioPlayer: UnifiedAudioPlayer
+    val audioPlayer: UnifiedAudioPlayer,
+    val previouslyPlayedTrackRepository: PreviouslyPlayedTrackRepository,
+    val getUserUidUseCase: GetUserUidUseCase,
 ) : ViewModel() {
 
     val isPlaying: StateFlow<Boolean> = audioPlayer.isPlaying
@@ -54,6 +59,9 @@ class PlayerViewModel @Inject constructor(
         audioPlayer.play(track)
         viewModelScope.launch {
             _uiEvent.emit(PlayerUiEvent.ExpandPlayer)
+            getUserUidUseCase.invoke().collect { userUuid ->
+                previouslyPlayedTrackRepository.addPreviouslyPlayedTrack(track, userUuid)
+            }
         }
     }
 

@@ -1,10 +1,12 @@
 package com.ile.syrin_x.data.repository.history
 
+import android.util.Log
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 import com.ile.syrin_x.data.database.PreviouslyPlayedTrackDao
+import com.ile.syrin_x.data.model.UnifiedTrack
 import com.ile.syrin_x.data.model.entity.PreviouslyPlayedTrack
 import com.ile.syrin_x.data.model.entity.PreviouslyPlayedTrackEntity
 import com.ile.syrin_x.domain.core.Response
@@ -44,7 +46,8 @@ class PreviouslyPlayedTrackRepositoryImpl @Inject constructor(
                             popularity = e.popularity,
                             playbackUrl = e.playbackUrl,
                             artworkUrl = e.artworkUrl,
-                            musicSource = e.musicSource
+                            musicSource = e.musicSource,
+                            timesPlayed = e.timesPlayed
                         )
                     }
                 }
@@ -97,7 +100,8 @@ class PreviouslyPlayedTrackRepositoryImpl @Inject constructor(
                         popularity = e.popularity,
                         playbackUrl = e.playbackUrl,
                         artworkUrl = e.artworkUrl,
-                        musicSource = e.musicSource
+                        musicSource = e.musicSource,
+                        timesPlayed = e.timesPlayed
                     )
                 ))
             } else {
@@ -109,31 +113,43 @@ class PreviouslyPlayedTrackRepositoryImpl @Inject constructor(
     }
 
     override suspend fun addPreviouslyPlayedTrack(
-        track: PreviouslyPlayedTrack
-    ): Flow<Response<PreviouslyPlayedTrack>> = flow {
-        emit(Response.Loading)
+        track: UnifiedTrack,
+        userId: String
+    ) {
         try {
-            val entity = PreviouslyPlayedTrackEntity(
-                id = track.id,
-                userId = track.userId,
-                title = track.title,
-                albumName = track.albumName,
-                artists = track.artists,
-                genre = track.genre,
-                durationMs = track.durationMs,
-                explicit = track.explicit,
-                popularity = track.popularity,
-                playbackUrl = track.playbackUrl,
-                artworkUrl = track.artworkUrl,
-                musicSource = track.musicSource
-            )
-            trackDao.insert(entity)
-            db.getReference("users/${track.userId}/previouslyPlayedTracks/${track.id}")
-                .setValue(entity)
+            val existingEntity = trackDao.getById(track.id)
+
+            val entityToSave = if (existingEntity != null) {
+                val bumped = existingEntity.copy(timesPlayed = existingEntity.timesPlayed + 1)
+                trackDao.update(bumped)
+                bumped
+            } else {
+                val newEntity = PreviouslyPlayedTrackEntity(
+                    id = track.id,
+                    userId = userId,
+                    title = track.title,
+                    albumName = track.albumName,
+                    artists = track.artists,
+                    genre = track.genre,
+                    durationMs = track.durationMs,
+                    explicit = track.explicit,
+                    popularity = track.popularity,
+                    playbackUrl = track.playbackUrl,
+                    artworkUrl = track.artworkUrl,
+                    musicSource = track.musicSource,
+                    timesPlayed = 1L
+                )
+                trackDao.insert(newEntity)
+                newEntity
+            }
+
+            db.getReference("users/$userId/previouslyPlayedTracks/${track.id}")
+                .setValue(entityToSave)
                 .await()
-            emit(Response.Success(track))
+
         } catch (e: Exception) {
-            emit(Response.Error(e.localizedMessage ?: "Unknown error"))
+            Log.e("PreviouslyPlayedTrackRepository", e.message ?: "Unknown error")
         }
     }
+
 }

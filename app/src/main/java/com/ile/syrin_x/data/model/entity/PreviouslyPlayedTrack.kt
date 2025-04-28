@@ -14,5 +14,6 @@ data class PreviouslyPlayedTrack(
     val popularity: Int?,
     var playbackUrl: String?,
     val artworkUrl: String?,
-    val musicSource: MusicSource
+    val musicSource: MusicSource,
+    val timesPlayed: Long
 )

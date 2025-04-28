@@ -86,7 +86,7 @@ fun UserCreatedPlaylistsScreen(
                         modifier = Modifier
                             .weight(1f)
                             .clickable {
-                                navHostController.navigate("playlistDetails/${playlist.userCreatedPlaylistId}")
+                                navHostController.navigate("user_created_playlist_details_screen/${playlist.userCreatedPlaylistId}")
                             }
                     )
                     IconButton(onClick = { playlistToEdit = playlist }) {
