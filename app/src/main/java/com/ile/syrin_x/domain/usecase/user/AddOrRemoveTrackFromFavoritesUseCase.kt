@@ -1,4 +1,4 @@
-package com.ile.syrin_x.domain.usecase.usercreatedplaylist
+package com.ile.syrin_x.domain.usecase.user
 
 import com.ile.syrin_x.data.model.UnifiedTrack
 import com.ile.syrin_x.domain.repository.FavoriteTrackRepository

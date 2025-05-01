@@ -36,6 +36,7 @@ class PreviouslyPlayedTrackRepositoryImpl @Inject constructor(
                     entities.map { e ->
                         PreviouslyPlayedTrack(
                             id = e.id,
+                            trackId = e.trackId,
                             userId = e.userId,
                             title = e.title,
                             albumName = e.albumName,
@@ -90,6 +91,7 @@ class PreviouslyPlayedTrackRepositoryImpl @Inject constructor(
                 emit(Response.Success(
                     PreviouslyPlayedTrack(
                         id = e.id,
+                        trackId = e.trackId,
                         userId = e.userId,
                         title = e.title,
                         albumName = e.albumName,
@@ -125,7 +127,7 @@ class PreviouslyPlayedTrackRepositoryImpl @Inject constructor(
                 bumped
             } else {
                 val newEntity = PreviouslyPlayedTrackEntity(
-                    id = track.id,
+                    trackId = track.id,
                     userId = userId,
                     title = track.title,
                     albumName = track.albumName,
