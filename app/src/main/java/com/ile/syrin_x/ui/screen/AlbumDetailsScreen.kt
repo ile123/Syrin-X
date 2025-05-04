@@ -58,6 +58,7 @@ import com.ile.syrin_x.viewModel.PlaylistDetailsViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch
 import androidx.compose.material3.IconButton
+import com.ile.syrin_x.utils.formatDuration
 
 @Composable
 fun AlbumDetailsScreen(

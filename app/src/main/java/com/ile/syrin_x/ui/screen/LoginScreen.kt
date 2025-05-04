@@ -235,18 +235,18 @@ fun LoginInState(
         flow.collect {
             when (it) {
                 is Response.Loading -> {
-                    Log.i("Login state -> ", "Loading")
+                    Log.i("Login state", "Loading")
                     isLoading.value = true
                 }
 
                 is Response.Error -> {
-                    Log.e("Login state -> ", it.message)
+                    Log.e("Login state", it.message)
                     isLoading.value = false
                     onError()
                 }
 
                 is Response.Success -> {
-                    Log.i("Login state -> ", "Success")
+                    Log.i("Login state", "Success")
                     isLoading.value = false
                     onSuccess()
                 }

@@ -4,16 +4,19 @@ import android.util.Log
 import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ile.syrin_x.data.enums.MusicSource
 import com.ile.syrin_x.data.model.UnifiedPlaylist
 import com.ile.syrin_x.data.model.UnifiedTrack
 import com.ile.syrin_x.data.model.UnifiedUser
+import com.ile.syrin_x.data.model.entity.FavoriteArtist
 import com.ile.syrin_x.data.model.soundcloud.SoundCloudPlaylistResponse
 import com.ile.syrin_x.data.model.soundcloud.SoundCloudTrackResponse
 import com.ile.syrin_x.data.model.soundcloud.SoundCloudUserResponse
 import com.ile.syrin_x.data.model.spotify.SpotifyAlbum
 import com.ile.syrin_x.data.model.spotify.SpotifyResponse
 import com.ile.syrin_x.domain.core.Response
+import com.ile.syrin_x.domain.usecase.auth.GetUserUidUseCase
 import com.ile.syrin_x.domain.usecase.musicsource.soundcloud.SearchPlaylistsSoundCloudUseCase
 import com.ile.syrin_x.domain.usecase.musicsource.soundcloud.SearchTracksSoundCloudUseCase
 import com.ile.syrin_x.domain.usecase.musicsource.soundcloud.SearchUsersSoundCloudUseCase
@@ -21,6 +24,8 @@ import com.ile.syrin_x.domain.usecase.musicsource.spotify.SearchAlbumsSpotifyUse
 import com.ile.syrin_x.domain.usecase.musicsource.spotify.SearchAllSpotifyUseCase
 import com.ile.syrin_x.domain.usecase.musicsource.spotify.SearchPlaylistsSpotifyUseCase
 import com.ile.syrin_x.domain.usecase.musicsource.spotify.SearchTracksSpotifyUseCase
+import com.ile.syrin_x.domain.usecase.user.AddOrRemoveArtistFromFavoritesUseCase
+import com.ile.syrin_x.domain.usecase.user.GetAllFavoriteArtistsByUserUseCase
 import com.ile.syrin_x.utils.GlobalContext
 import com.ile.syrin_x.utils.toSoundCloudUnifiedPlaylists
 import com.ile.syrin_x.utils.toSoundCloudUnifiedTracks
@@ -43,7 +48,10 @@ class SearchViewModel @Inject constructor(
     private val searchUsersSpotifyUseCase: SearchAlbumsSpotifyUseCase,
     private val searchTracksSoundCloudUseCase: SearchTracksSoundCloudUseCase,
     private val searchPlaylistsSoundCloudUseCase: SearchPlaylistsSoundCloudUseCase,
-    private val searchUsersSoundCloudUseCase: SearchUsersSoundCloudUseCase
+    private val searchUsersSoundCloudUseCase: SearchUsersSoundCloudUseCase,
+    private val getUserUidUseCase: GetUserUidUseCase,
+    private val getAllFavoriteArtistsByUserUseCase: GetAllFavoriteArtistsByUserUseCase,
+    private val addOrRemoveArtistFromFavoritesUseCase: AddOrRemoveArtistFromFavoritesUseCase
 ): ViewModel() {
 
     private val _searchFlow = MutableSharedFlow<Response<Any>>()
@@ -60,6 +68,7 @@ class SearchViewModel @Inject constructor(
     val searchedPlaylists = mutableStateListOf<UnifiedPlaylist>()
     val searchedAlbums = mutableStateListOf<SpotifyAlbum>()
     val searchedUsers = mutableStateListOf<UnifiedUser>()
+    val favoriteArtists = mutableStateListOf<FavoriteArtist>()
 
     var searchedMusicSource = MusicSource.NOT_SPECIFIED
 
@@ -70,6 +79,26 @@ class SearchViewModel @Inject constructor(
         searchedPlaylists.clear()
         searchedAlbums.clear()
         searchedUsers.clear()
+        favoriteArtists.clear()
+    }
+
+    fun fetchAllUsersFavoriteArtists() = viewModelScope.launch {
+        getUserUidUseCase.invoke().collect { userUid ->
+            getAllFavoriteArtistsByUserUseCase(userUid).collect { response ->
+                when(response) {
+                    is Response.Error -> {
+                        Log.d("SearchViewModel", response.message)
+                    }
+                    is Response.Loading -> {  }
+                    is Response.Success<*> -> {
+                        val usersFavoriteArtistsData = response.data as? List<FavoriteArtist>
+                        usersFavoriteArtistsData?.let {
+                            favoriteArtists.addAll(usersFavoriteArtistsData)
+                        }
+                    }
+                }
+            }
+        }
     }
 
     fun searchAll(keyword: String, musicSource: String) = viewModelScope.launch {
@@ -356,6 +385,19 @@ class SearchViewModel @Inject constructor(
                     }
                 }
                 MusicSource.NOT_SPECIFIED -> { }
+            }
+        }
+    }
+
+    fun addOrRemoveArtistFromUserFavorites(artist: UnifiedUser) = viewModelScope.launch {
+        getUserUidUseCase.invoke().collect { userUid ->
+            val favoriteArtistToAddOrRemove = FavoriteArtist(artist.id, userUid, artist.name ?: "Piotr Musial")
+            addOrRemoveArtistFromFavoritesUseCase(favoriteArtistToAddOrRemove).collect {
+                if(favoriteArtists.find { x -> x.id == favoriteArtistToAddOrRemove.id } == null) {
+                    favoriteArtists.add(favoriteArtistToAddOrRemove)
+                } else {
+                    favoriteArtists.remove(favoriteArtistToAddOrRemove)
+                }
             }
         }
     }

@@ -12,6 +12,7 @@ import androidx.navigation.navArgument
 import androidx.navigation.navigation
 import com.ile.syrin_x.data.enums.MusicSource
 import com.ile.syrin_x.ui.screen.AlbumDetailsScreen
+import com.ile.syrin_x.ui.screen.ArtistDetailsScreen
 import com.ile.syrin_x.ui.screen.HomeScreen
 import com.ile.syrin_x.ui.screen.LoginScreen
 import com.ile.syrin_x.ui.screen.MusicSourceScreen
@@ -22,6 +23,7 @@ import com.ile.syrin_x.ui.screen.RegisterScreen
 import com.ile.syrin_x.ui.screen.SearchResultScreen
 import com.ile.syrin_x.ui.screen.SearchScreen
 import com.ile.syrin_x.ui.screen.TrackDetailsScreen
+import com.ile.syrin_x.ui.screen.TrendingSongsByGenreScreen
 import com.ile.syrin_x.ui.screen.UserCreatedPlaylistsScreen
 import com.ile.syrin_x.ui.screen.UserCreatedPlaylistDetailsScreen
 import com.ile.syrin_x.viewModel.PlayerViewModel
@@ -136,7 +138,6 @@ fun SetUpNavigationGraph(
                 musicSource = musicSource
             )
         }
-
         composable(
             route = NavigationGraph.AlbumDetailsScreen.route + "/{albumId}/{musicSource}",
             arguments = listOf(
@@ -156,6 +157,24 @@ fun SetUpNavigationGraph(
             )
         }
         composable(
+            route = NavigationGraph.ArtistDetailsScreen.route + "/{artistId}/{musicSource}",
+            arguments = listOf(
+                navArgument("artistId") { type = NavType.StringType },
+                navArgument("musicSource") { type = NavType.StringType }
+            )
+        ) {
+            val artistId = it.arguments?.getString("artistId") ?: ""
+            val musicSourceString = it.arguments?.getString("musicSource") ?: ""
+            val musicSource = MusicSource.valueOf(musicSourceString)
+
+            ArtistDetailsScreen(
+                playerViewModel,
+                navHostController,
+                artistId,
+                musicSource
+            )
+        }
+        composable(
             route = NavigationGraph.ProfileScreen.route
         ) {
             ProfileScreen(navHostController)
@@ -164,6 +183,15 @@ fun SetUpNavigationGraph(
             route = NavigationGraph.PaymentScreen.route
         ) {
             PaymentScreen(navHostController)
+        }
+        composable(
+            route = NavigationGraph.TrendingSongsByGenreScreen.route + "/{genreId}",
+            arguments = listOf(
+                navArgument("genreId") { type = NavType.StringType }
+            )
+        ) {
+            val genreId = it.arguments?.getString("genreId") ?: ""
+            TrendingSongsByGenreScreen(navHostController, genreId)
         }
     }
 }
