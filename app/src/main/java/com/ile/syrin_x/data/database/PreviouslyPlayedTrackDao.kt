@@ -26,7 +26,7 @@ interface PreviouslyPlayedTrackDao {
     @Query("DELETE FROM PreviouslyPlayedTrackEntity WHERE userId = :userId")
     suspend fun deleteAllForUser(userId: String)
 
-    @Query("SELECT * FROM PreviouslyPlayedTrackEntity WHERE id = :id")
+    @Query("SELECT * FROM PreviouslyPlayedTrackEntity WHERE trackId = :id")
     suspend fun getById(id: String): PreviouslyPlayedTrackEntity?
 
     @Query("SELECT * FROM PreviouslyPlayedTrackEntity WHERE userId = :userId")

@@ -1,9 +1,11 @@
 package com.ile.syrin_x.di
 
+import com.ile.syrin_x.data.api.DeezerApi
 import com.ile.syrin_x.data.api.SoundCloudApi
 import com.ile.syrin_x.data.api.SoundCloudAuthApi
 import com.ile.syrin_x.data.api.SpotifyApi
 import com.ile.syrin_x.data.api.SpotifyAuthApi
+import com.ile.syrin_x.data.api.StripeApi
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -20,6 +22,8 @@ object NetworkModule {
     private const val SPOTIFY_ACCOUNT_URL = "https://accounts.spotify.com/"
     private const val SPOTIFY_BASE_URL = "https://api.spotify.com/"
     private const val SOUNDCLOUD_BASE_URL = "https://api.soundcloud.com/"
+    private const val STRIPE_BASE_URL = "https://api.stripe.com/v1/"
+    private const val DEEZER_BASE_URL = "https://api.deezer.com/"
 
     // I have to provide a placeholder BASE URL, because this will be overwritten later
     @Provides
@@ -67,5 +71,23 @@ object NetworkModule {
             .baseUrl(SOUNDCLOUD_BASE_URL)
             .build()
             .create(SoundCloudApi::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideStripeApi(retrofit: Retrofit): StripeApi {
+        return retrofit.newBuilder()
+            .baseUrl(STRIPE_BASE_URL)
+            .build()
+            .create(StripeApi::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideDeezerApi(retrofit: Retrofit): DeezerApi {
+        return retrofit.newBuilder()
+            .baseUrl(DEEZER_BASE_URL)
+            .build()
+            .create(DeezerApi::class.java)
     }
 }

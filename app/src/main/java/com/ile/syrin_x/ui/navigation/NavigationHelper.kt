@@ -15,7 +15,9 @@ import com.ile.syrin_x.ui.screen.AlbumDetailsScreen
 import com.ile.syrin_x.ui.screen.HomeScreen
 import com.ile.syrin_x.ui.screen.LoginScreen
 import com.ile.syrin_x.ui.screen.MusicSourceScreen
+import com.ile.syrin_x.ui.screen.PaymentScreen
 import com.ile.syrin_x.ui.screen.PlaylistDetailsScreen
+import com.ile.syrin_x.ui.screen.ProfileScreen
 import com.ile.syrin_x.ui.screen.RegisterScreen
 import com.ile.syrin_x.ui.screen.SearchResultScreen
 import com.ile.syrin_x.ui.screen.SearchScreen
@@ -153,7 +155,16 @@ fun SetUpNavigationGraph(
                 musicSource
             )
         }
-
+        composable(
+            route = NavigationGraph.ProfileScreen.route
+        ) {
+            ProfileScreen(navHostController)
+        }
+        composable(
+            route = NavigationGraph.PaymentScreen.route
+        ) {
+            PaymentScreen(navHostController)
+        }
     }
 }
 

@@ -10,13 +10,13 @@ import com.ile.syrin_x.data.model.usercreatedplaylist.FavoriteTrack
 import com.ile.syrin_x.data.model.usercreatedplaylist.UserCreatedPlaylist
 import com.ile.syrin_x.domain.core.Response
 import com.ile.syrin_x.domain.usecase.auth.GetUserUidUseCase
-import com.ile.syrin_x.domain.usecase.usercreatedplaylist.AddOrRemoveTrackFromFavoritesUseCase
+import com.ile.syrin_x.domain.usecase.user.AddOrRemoveTrackFromFavoritesUseCase
 import com.ile.syrin_x.domain.usecase.usercreatedplaylist.AddOrRemoveUserCreatedPlaylistTrackUseCase
 import com.ile.syrin_x.domain.usecase.usercreatedplaylist.CreateUserCreatedPlaylistUseCase
 import com.ile.syrin_x.domain.usecase.usercreatedplaylist.DeleteUserCreatedPlaylistUseCase
-import com.ile.syrin_x.domain.usecase.usercreatedplaylist.GetAllFavoriteTracksByUserUseCase
+import com.ile.syrin_x.domain.usecase.user.GetAllFavoriteTracksByUserUseCase
 import com.ile.syrin_x.domain.usecase.usercreatedplaylist.GetAllUserCreatedPlaylistsByUserUseCase
-import com.ile.syrin_x.domain.usecase.usercreatedplaylist.GetFavoriteTrackByIdUseCase
+import com.ile.syrin_x.domain.usecase.user.GetFavoriteTrackByIdUseCase
 import com.ile.syrin_x.domain.usecase.usercreatedplaylist.GetUserCreatedPlaylistByIdUseCase
 import com.ile.syrin_x.domain.usecase.usercreatedplaylist.UpdateUserCreatedPlaylistUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel

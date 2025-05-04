@@ -44,3 +44,8 @@
 ## IMPORTANT
 
 - **Spotify**: In order to use spotify in this app, you need to have the spotify app installed on the phone, it has to be open in the background and you need to have premium in order to play songs/playlists/albums.
+- **Stripe**: This app has stripe, but only supports their default testing card, so no actual charges are made(use the card bellow):
+  - *Card number*: 4242 4242 4242 4242
+  - *Exp*: Any future date
+  - *CVC*: Any 3 digits
+  - *ZIP*: Any 5 digits

@@ -9,6 +9,7 @@ import com.ile.syrin_x.data.enums.MusicSource
 @Entity
 data class PreviouslyPlayedTrackEntity(
     @PrimaryKey var id: String = "",
+    var trackId: String = "",
     var userId: String = "",
     var title: String? = null,
     var albumName: String? = null,

@@ -108,4 +108,7 @@ dependencies {
     implementation(libs.androidx.media.v160)
     implementation(libs.coil)
     implementation(libs.androidx.core.ktx.v1160)
+    implementation(libs.firebase.storage.ktx)
+    implementation(libs.kotlinx.coroutines.play.services)
+    implementation(libs.stripe.android)
 }

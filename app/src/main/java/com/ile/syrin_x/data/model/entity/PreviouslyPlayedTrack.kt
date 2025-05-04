@@ -4,6 +4,7 @@ import com.ile.syrin_x.data.enums.MusicSource
 
 data class PreviouslyPlayedTrack(
     val id: String,
+    val trackId: String,
     val userId: String,
     val title: String?,
     val albumName: String?,

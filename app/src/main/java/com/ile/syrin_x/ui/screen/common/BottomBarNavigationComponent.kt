@@ -61,12 +61,12 @@ fun BottomBarNavigationComponent(navHostController: NavHostController) {
                 IconButton(onClick = { navHostController.navigate(NavigationGraph.UserCreatedPlaylistScreen.route) }) {
                     Icon(
                         CollectionIcon,
-                        contentDescription = "Library",
+                        contentDescription = "Playlists",
                         modifier = Modifier.size(30.dp)
                     )
                 }
                 Text(
-                    "Library",
+                    "Playlists",
                     modifier = Modifier.padding(top = 4.dp)
                 )
             }
@@ -92,7 +92,7 @@ fun BottomBarNavigationComponent(navHostController: NavHostController) {
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier.weight(1f)
             ) {
-                IconButton(onClick = {  }) {
+                IconButton(onClick = { navHostController.navigate(NavigationGraph.ProfileScreen.route) }) {
                     Icon(
                         imageVector = Icons.Outlined.Person,
                         contentDescription = "Profile",
