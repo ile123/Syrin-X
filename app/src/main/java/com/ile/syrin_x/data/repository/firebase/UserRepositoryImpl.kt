@@ -165,6 +165,25 @@ class UserRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun upgradeUserToPremium(userId: String) {
+        val updateMap = mapOf(
+            "premium" to true,
+        )
+
+        val usersRef = db.reference.child("users").child(userId)
+
+        suspendCoroutine { continuation ->
+            usersRef.updateChildren(updateMap)
+                .addOnCompleteListener { task ->
+                    if (task.isSuccessful) continuation.resume(Unit)
+                    else continuation.resumeWithException(Exception("Failed to update user"))
+                }
+                .addOnFailureListener { e ->
+                    continuation.resumeWithException(e)
+                }
+        }
+    }
+
 
     private fun parseUserInfo(data: Map<*, *>): UserInfo {
         return UserInfo(

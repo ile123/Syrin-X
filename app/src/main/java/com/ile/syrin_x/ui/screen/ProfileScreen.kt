@@ -52,6 +52,7 @@ import com.ile.syrin_x.data.model.entity.FavoriteArtist
 import com.ile.syrin_x.data.model.entity.PreviouslyPlayedTrack
 import com.ile.syrin_x.data.model.usercreatedplaylist.FavoriteTrack
 import com.ile.syrin_x.domain.core.Response
+import com.ile.syrin_x.ui.navigation.NavigationGraph
 import com.ile.syrin_x.ui.screen.common.EditProfileDialog
 import com.ile.syrin_x.ui.screen.common.MyCircularProgress
 import com.ile.syrin_x.viewModel.ProfileViewModel
@@ -108,6 +109,7 @@ fun ProfileScreen(
         )
 
         Content(
+            navHostController = navHostController,
             paddingValues = paddingValues,
             profileFlow = profileViewModel.profileFlow,
             profileError = { errorMessage ->
@@ -139,6 +141,7 @@ fun ProfileScreen(
 
 @Composable
 fun Content(
+    navHostController: NavHostController,
     paddingValues: PaddingValues,
     profileFlow: MutableSharedFlow<Response<Any>>,
     profileError: (error: String) -> Unit,
@@ -179,6 +182,13 @@ fun Content(
                 Text("Username: ${userInfo.userName}", fontSize = 18.sp)
                 Text("Full Name: ${userInfo.fullName}", fontSize = 18.sp)
                 Text("Email: ${userInfo.email}", fontSize = 16.sp)
+                Text(
+                    text = "Get premium",
+                    fontSize = 24.sp,
+                    modifier = Modifier.clickable {
+                        navHostController.navigate(NavigationGraph.PaymentScreen.route)
+                    }
+                )
             }
 
             Spacer(modifier = Modifier.height(24.dp))

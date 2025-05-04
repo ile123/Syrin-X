@@ -12,4 +12,6 @@ object EnvLoader {
     val spotifyClientSecret: String by lazy { dotenv["SPOTIFY_CLIENT_SECRET"] }
     val soundCloudClientId: String by lazy { dotenv["SOUNDCLOUD_CLIENT_ID"] }
     val soundCloudClientSecret: String by lazy { dotenv["SOUNDCLOUD_CLIENT_SECRET"] }
+    val stripeSecretKey: String by lazy { dotenv["STRIPE_SECRET_KEY"] }
+    val stripePublishableKey: String by lazy { dotenv["STRIPE_PUBLISHABLE_KEY"] }
 }
