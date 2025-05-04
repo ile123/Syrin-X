@@ -51,6 +51,7 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.runtime.*
 import com.ile.syrin_x.ui.screen.common.AddTrackToPlaylistModal
+import com.ile.syrin_x.utils.formatDuration
 
 @Composable
 fun TrackDetailsScreen(

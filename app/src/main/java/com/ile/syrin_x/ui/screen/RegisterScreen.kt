@@ -245,18 +245,18 @@ fun RegisterState(
         registerFlowState.collect {
             when (it) {
                 is Response.Loading -> {
-                    Log.i("Register state -> ", "Loading")
+                    Log.i("Register state", "Loading")
                     isLoading.value = true
                 }
 
                 is Response.Error -> {
-                    Log.e("Register state -> ", it.message)
+                    Log.e("Register state", it.message)
                     isLoading.value = false
                     onError(it.message)
                 }
 
                 is Response.Success -> {
-                    Log.i("Register state -> ", "Success")
+                    Log.i("Register state", "Success")
                     isLoading.value = false
                     onSuccess()
                 }

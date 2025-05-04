@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ile.syrin_x.data.enums.UserCreatedPlaylistTrackAction
 import com.ile.syrin_x.data.model.UnifiedTrack
+import com.ile.syrin_x.data.model.UnifiedUser
 import com.ile.syrin_x.data.model.usercreatedplaylist.FavoriteTrack
 import com.ile.syrin_x.data.model.usercreatedplaylist.UserCreatedPlaylist
 import com.ile.syrin_x.domain.core.Response

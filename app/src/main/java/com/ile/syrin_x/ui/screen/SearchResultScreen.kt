@@ -21,6 +21,10 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -58,7 +62,9 @@ import com.ile.syrin_x.data.model.UnifiedTrack
 import com.ile.syrin_x.data.model.UnifiedUser
 import com.ile.syrin_x.data.model.spotify.SpotifyAlbum
 import com.ile.syrin_x.domain.core.Response
+import com.ile.syrin_x.ui.navigation.NavigationGraph
 import com.ile.syrin_x.ui.screen.common.MyCircularProgress
+import com.ile.syrin_x.utils.formatDuration
 import com.ile.syrin_x.viewModel.SearchViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch
@@ -79,6 +85,10 @@ fun SearchResultScreen(
             MusicCategory.ALBUMS -> searchViewModel.fetchMoreAlbumsForInfiniteScroll()
             MusicCategory.USERS -> searchViewModel.fetchMoreUsersForInfiniteScroll()
         }
+    }
+
+    LaunchedEffect(Unit) {
+        searchViewModel.fetchAllUsersFavoriteArtists()
     }
 
     Scaffold(
@@ -211,7 +221,7 @@ fun Content(
             MusicCategory.USERS -> {
                 LazyColumn(state = usersLazyListState) {
                     items(searchViewModel.searchedUsers, key = { item -> "${item.id}-${MusicCategory.USERS}" }) { user ->
-                        UnifiedUserRow(user = user, searchViewModel.searchedMusicSource, navHostController)
+                        UnifiedUserRow(user = user, searchViewModel.searchedMusicSource, navHostController, searchViewModel)
                     }
                 }
             }
@@ -254,13 +264,6 @@ fun SearchResultState(
             }
         }
     }
-}
-
-fun formatDuration(durationMs: Int): String {
-    val totalSeconds = durationMs / 1000
-    val minutes = totalSeconds / 60
-    val seconds = totalSeconds % 60
-    return "$minutes:${seconds.toString().padStart(2, '0')}"
 }
 
 @Composable
@@ -396,14 +399,15 @@ fun UnifiedUserRow(
     user: UnifiedUser,
     musicSource: MusicSource,
     navHostController: NavHostController,
-    modifier: Modifier = Modifier,
-    onClick: () -> Unit = {}
+    searchViewModel: SearchViewModel,
+    modifier: Modifier = Modifier
 ) {
+    val isFavorited = searchViewModel.favoriteArtists.any { it.id == user.id }
+
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
             .padding(8.dp)
     ) {
         AsyncImage(
@@ -413,7 +417,9 @@ fun UnifiedUserRow(
                 .size(48.dp)
                 .clip(CircleShape)
         )
+
         Spacer(modifier = Modifier.width(12.dp))
+
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = user.name ?: "Unknown User",
@@ -427,8 +433,19 @@ fun UnifiedUserRow(
                 )
             }
         }
+
+        IconButton(onClick = {
+            searchViewModel.addOrRemoveArtistFromUserFavorites(user)
+        }) {
+            Icon(
+                imageVector = Icons.Default.Favorite,
+                contentDescription = if (isFavorited) "Remove from favorites" else "Add to favorites",
+                tint = if (isFavorited) Color.Red else Color.Gray
+            )
+        }
     }
 }
+
 
 @Composable
 fun MusicCategoryTabs(

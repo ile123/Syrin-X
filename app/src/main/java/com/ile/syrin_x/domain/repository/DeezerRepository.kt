@@ -7,5 +7,5 @@ import kotlinx.coroutines.flow.Flow
 
 interface DeezerRepository {
     suspend fun getAllGenres(): Flow<Response<List<MusicGenre>>>
-    suspend fun getAllSongsByGenre(): Flow<Response<List<TrackByGenre>>>
+    suspend fun getAllTrendingSongsByGenre(genreId: Long, limit: Long, offset: Long): Flow<Response<List<TrackByGenre>>>
 }

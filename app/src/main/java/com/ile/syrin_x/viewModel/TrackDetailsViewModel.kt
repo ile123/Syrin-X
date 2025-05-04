@@ -6,10 +6,8 @@ import androidx.lifecycle.viewModelScope
 import com.ile.syrin_x.data.enums.MusicSource
 import com.ile.syrin_x.data.model.UnifiedTrack
 import com.ile.syrin_x.data.model.soundcloud.SoundCloudTrackById
-import com.ile.syrin_x.data.model.soundcloud.SoundCloudTrackStreamableUrls
 import com.ile.syrin_x.data.model.spotify.SpotifyTrackDetails
 import com.ile.syrin_x.domain.core.Response
-import com.ile.syrin_x.domain.usecase.musicsource.soundcloud.GetSoundCloudTrackStreamUrlsUseCase
 import com.ile.syrin_x.domain.usecase.musicsource.soundcloud.GetTrackByIdSoundCloudUseCase
 import com.ile.syrin_x.domain.usecase.musicsource.spotify.GetTrackByIdSpotifyUseCase
 import com.ile.syrin_x.utils.EnvLoader
@@ -18,16 +16,13 @@ import com.ile.syrin_x.utils.fromSoundCloudTrackToUnifiedTrack
 import com.ile.syrin_x.utils.fromSpotifyTrackToUnifiedTrack
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class TrackDetailsViewModel @Inject constructor(
     private val getTrackByIdSoundCloudUseCase: GetTrackByIdSoundCloudUseCase,
-    private val getTrackByIdSpotifyUseCase: GetTrackByIdSpotifyUseCase,
-    private val getSoundCloudTrackStreamUrlsUseCase: GetSoundCloudTrackStreamUrlsUseCase
+    private val getTrackByIdSpotifyUseCase: GetTrackByIdSpotifyUseCase
 ) : ViewModel() {
 
     private val _searchFlow = MutableSharedFlow<Response<Any>>()

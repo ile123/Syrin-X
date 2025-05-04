@@ -64,10 +64,10 @@ class FavoriteArtistRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun getFavoriteArtistById(artistId: String): Flow<Response<FavoriteArtist>> = flow {
+    override suspend fun getFavoriteArtistById(userId: String, artistId: String): Flow<Response<FavoriteArtist>> = flow {
         emit(Response.Loading)
         try {
-            val entity = favoriteArtistDao.getById(artistId)
+            val entity = favoriteArtistDao.getById(artistId, userId)
             if (entity != null) {
                 val artist = FavoriteArtist(
                     id = entity.id,
@@ -83,7 +83,7 @@ class FavoriteArtistRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun addFavoriteArtist(artist: FavoriteArtist): Flow<Response<FavoriteArtist>> = flow {
+    override suspend fun addOrRemoveFavoriteArtist(artist: FavoriteArtist): Flow<Response<FavoriteArtist>> = flow {
         emit(Response.Loading)
         try {
             val entity = FavoriteArtistEntity(
@@ -91,13 +91,25 @@ class FavoriteArtistRepositoryImpl @Inject constructor(
                 userId = artist.userId,
                 name = artist.name
             )
-            favoriteArtistDao.insert(entity)
-            db.getReference("users/${artist.userId}/favoriteArtists/${artist.id}")
-                .setValue(entity)
-                .await()
+
+            val existing = favoriteArtistDao.getById(artist.id, artist.userId)
+
+            if (existing != null) {
+                favoriteArtistDao.delete(entity)
+                db.getReference("users/${artist.userId}/favoriteArtists/${artist.id}")
+                    .removeValue()
+                    .await()
+            } else {
+                favoriteArtistDao.insert(entity)
+                db.getReference("users/${artist.userId}/favoriteArtists/${artist.id}")
+                    .setValue(entity)
+                    .await()
+            }
+
             emit(Response.Success(artist))
         } catch (e: Exception) {
             emit(Response.Error(e.localizedMessage ?: "Unknown error"))
         }
     }
+
 }

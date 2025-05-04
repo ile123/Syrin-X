@@ -22,8 +22,8 @@ interface FavoriteArtistDao {
     @Query("DELETE FROM FavoriteArtistEntity WHERE userId = :userId")
     suspend fun deleteAllForUser(userId: String)
 
-    @Query("SELECT * FROM FavoriteArtistEntity WHERE id = :id")
-    suspend fun getById(id: String): FavoriteArtistEntity?
+    @Query("SELECT * FROM FavoriteArtistEntity WHERE id = :id AND userId = :userId")
+    suspend fun getById(id: String, userId: String): FavoriteArtistEntity?
 
     @Query("SELECT * FROM FavoriteArtistEntity WHERE userId = :userId")
     fun getAllForUser(userId: String): Flow<List<FavoriteArtistEntity>>
