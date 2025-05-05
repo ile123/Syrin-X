@@ -13,6 +13,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
@@ -33,8 +35,8 @@ fun MusicSourceScreen(
 ) {
     val context = LocalContext.current
 
-    val spotifyUserToken = musicSourceViewModel.spotifyUserToken
-    val soundCloudUserToken = musicSourceViewModel.soundCloudUserToken
+    val spotifyUserToken by musicSourceViewModel.spotifyUserToken.collectAsState()
+    val soundCloudUserToken by musicSourceViewModel.soundCloudUserToken.collectAsState()
 
     LaunchedEffect(Unit){
         musicSourceViewModel.getUserSpotifyToken()
@@ -76,7 +78,7 @@ fun MusicSourceScreen(
                 }
                 context.startActivity(intent)
             },
-                enabled = spotifyUserToken.value == null
+                enabled = spotifyUserToken == null
             ) {
                 Text("Login with Spotify")
             }
@@ -96,7 +98,7 @@ fun MusicSourceScreen(
                 }
                 context.startActivity(intent)
             },
-                enabled = soundCloudUserToken.value == null
+                enabled = soundCloudUserToken == null
             ) {
                 Text("Login with SoundCloud")
             }

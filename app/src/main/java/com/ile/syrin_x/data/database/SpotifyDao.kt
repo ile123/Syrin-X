@@ -9,7 +9,7 @@ import com.ile.syrin_x.data.model.entity.SpotifyUserToken
 @Dao
 interface SpotifyDao {
     @Query("SELECT * FROM spotifyusertoken WHERE userId = :userId LIMIT 1")
-    fun getUserToken(userId: String): SpotifyUserToken?
+    suspend fun getUserToken(userId: String): SpotifyUserToken?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertToken(token: SpotifyUserToken)

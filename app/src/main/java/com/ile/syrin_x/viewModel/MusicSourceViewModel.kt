@@ -14,6 +14,8 @@ import com.ile.syrin_x.domain.usecase.musicsource.spotify.ExchangeSpotifyCodeFor
 import com.ile.syrin_x.domain.usecase.musicsource.spotify.GetSpotifyUserTokenUseCase
 import com.ile.syrin_x.utils.EnvLoader
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -27,8 +29,11 @@ class MusicSourceViewModel @Inject constructor(
 
 ): ViewModel() {
 
-    val spotifyUserToken = mutableStateOf<SpotifyUserToken?>(null)
-    val soundCloudUserToken = mutableStateOf<SoundCloudUserToken?>(null)
+    private val _spotifyUserToken = MutableStateFlow<SpotifyUserToken?>(null)
+    val spotifyUserToken: StateFlow<SpotifyUserToken?> = _spotifyUserToken
+
+    private val _soundCloudUserToken = MutableStateFlow<SoundCloudUserToken?>(null)
+    val soundCloudUserToken: StateFlow<SoundCloudUserToken?> = _soundCloudUserToken
 
     fun loginSpotify(code: String, redirectUri: String) {
         val authHeader = generateAuthHeader(EnvLoader.spotifyClientId, EnvLoader.spotifyClientSecret)
@@ -36,7 +41,7 @@ class MusicSourceViewModel @Inject constructor(
             getUserUidUseCase.invoke().collect { userUuid ->
                 try {
                     val token = exchangeSpotifyCodeForTokenUseCase(userUuid, authHeader, code, redirectUri)
-                    spotifyUserToken.value = token
+                    _spotifyUserToken.value = token
                 } catch (e: Exception) {
                     Log.d("Login Error:", e.message.toString())
                 }
@@ -49,7 +54,7 @@ class MusicSourceViewModel @Inject constructor(
             getUserUidUseCase.invoke().collect { userUuid ->
                 try {
                     val token = exchangeSoundCloudCodeForTokenUseCase(userUuid, EnvLoader.soundCloudClientId, EnvLoader.soundCloudClientSecret, code, redirectUri)
-                    soundCloudUserToken.value = token
+                    _soundCloudUserToken.value = token
                 } catch (e: Exception) {
                     Log.d("Login Error:", e.message.toString())
                 }
@@ -64,7 +69,7 @@ class MusicSourceViewModel @Inject constructor(
                     try {
                         val token = spotifyGetUserTokenUseCase(userUuid)
                         Log.d("Token", token.toString())
-                        spotifyUserToken.value = token
+                        _spotifyUserToken.value = token
 
                     } catch (e: Exception) {
                         Log.d("Token fetching error:", e.message.toString())
@@ -80,7 +85,7 @@ class MusicSourceViewModel @Inject constructor(
                 getUserUidUseCase.invoke().collect { userUuid ->
                     try {
                         val token = getSoundCloudUserTokenUseCase(userUuid)
-                        soundCloudUserToken.value = token
+                        _soundCloudUserToken.value = token
                     } catch (e: Exception) {
                         Log.d("Token fetching error:", e.message.toString())
                     }
