@@ -211,12 +211,11 @@ class SpotifyRepositoryImpl @Inject constructor(
     override suspend fun setRepeatMode(mode: MusicPlayerRepeatMode, accessToken: String) {
         val apiState = when (mode) {
             MusicPlayerRepeatMode.OFF -> "off"
-            MusicPlayerRepeatMode.ONE -> "track"
             MusicPlayerRepeatMode.ALL -> "context"
         }
 
         try {
-            if(GlobalContext.spotifyDeviceId.isEmpty()) {
+            if (GlobalContext.spotifyDeviceId.isEmpty()) {
                 getDeviceId("Bearer $accessToken")
             }
             val response = api.setRepeatMode("Bearer $accessToken", apiState, GlobalContext.spotifyDeviceId)

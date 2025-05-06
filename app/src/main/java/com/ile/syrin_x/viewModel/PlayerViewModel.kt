@@ -88,8 +88,7 @@ class PlayerViewModel @Inject constructor(
     fun toggleCurrentRepeatMode() {
         val next = when (audioPlayer.currentRepeatMode) {
             MusicPlayerRepeatMode.OFF -> MusicPlayerRepeatMode.ALL
-            MusicPlayerRepeatMode.ALL -> MusicPlayerRepeatMode.ONE
-            MusicPlayerRepeatMode.ONE -> MusicPlayerRepeatMode.OFF
+            MusicPlayerRepeatMode.ALL -> MusicPlayerRepeatMode.OFF
         }
         audioPlayer.setCurrentRepeatMode(next)
     }

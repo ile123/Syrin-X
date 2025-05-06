@@ -117,7 +117,6 @@ fun FullPlayerScreen(
         IconButton(onClick = onRepeatToggle) {
             val icon = when (repeatMode) {
                 MusicPlayerRepeatMode.OFF -> RepeatIcon
-                MusicPlayerRepeatMode.ONE -> RepeatOnceOnIcon
                 MusicPlayerRepeatMode.ALL -> RepeatOnIcon
             }
             Icon(icon, contentDescription = null, tint = Color.White)
