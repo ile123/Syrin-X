@@ -71,6 +71,7 @@ class TrackDetailsViewModel @Inject constructor(
 
                             if(trackDetails!!.playbackUrl == null) {
                                 //val soundCloudTrackStreamUrlsResponse = getSoundCloudTrackStreamUrlsUseCase(trackId, GlobalContext.Tokens.soundCloudToken)
+                                //Pitbull - aka. Mr. Worldwide
                                 trackDetails!!.playbackUrl = "https://api.soundcloud.com/tracks/${trackId}/stream?client_id=${EnvLoader.soundCloudClientId}"
                             }
 

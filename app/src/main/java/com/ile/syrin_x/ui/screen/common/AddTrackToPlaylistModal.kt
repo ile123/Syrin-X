@@ -1,5 +1,6 @@
 package com.ile.syrin_x.ui.screen.common
 
+import android.util.Log
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -30,74 +31,84 @@ import com.ile.syrin_x.viewModel.PlaylistManagementViewModel
 @Composable
 fun AddTrackToPlaylistModal(
     track: UnifiedTrack,
+    // You should only call this composable when you actually want to show it:
+    //   if (showAddDialog) {
+    //     AddTrackToPlaylistModal(track, onDismiss = { showAddDialog = false })
+    //   }
     onDismiss: () -> Unit,
-    title: String,
-    confirmButtonText: String,
-    dismissButtonText: String,
-    cancelable: Boolean,
+    title: String = "Add to Playlist",
+    confirmButtonText: String = "Done",
+    dismissButtonText: String = "Cancel",
+    cancelable: Boolean = true,
     playlistManagementViewModel: PlaylistManagementViewModel = hiltViewModel()
 ) {
-    LaunchedEffect(Unit) {
-        playlistManagementViewModel.getAllUsersPlaylists()
-    }
-
+    // This is your SnapshotStateList from the VM
     val playlists = playlistManagementViewModel.userPlaylists
 
-    val currentChecked = remember { mutableStateMapOf<String, Boolean>() }
-    var initialCheckedMap by remember { mutableStateOf<Map<String, Boolean>>(emptyMap()) }
+    // Compute once—any time the *contents* change—what set of IDs the track is currently in
+    val initialSelectedIds = remember(playlists.map { it.userCreatedPlaylistId to it.tracks.map { t -> t.trackId }.toSet() }, track.id) {
+        playlists
+            .filter { pw -> pw.tracks.any { it.trackId == track.id } }
+            .map { it.userCreatedPlaylistId }
+            .toSet()
+    }
 
-    LaunchedEffect(track.id, playlists) {
-        val init = playlists.associate { pw ->
-            pw.userCreatedPlaylistId to pw.tracks.any { it.trackId == track.id }
-        }
-        initialCheckedMap = init
-        currentChecked.clear()
-        currentChecked.putAll(init)
+    // Backing state for all toggled checkboxes
+    var selectedIds by remember(playlists.map { it.userCreatedPlaylistId }, track.id) {
+        mutableStateOf(initialSelectedIds)
     }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(text = title) },
+        title = { Text(title) },
         text = {
-            Column(modifier = Modifier.fillMaxWidth()) {
+            Column(Modifier.fillMaxWidth()) {
                 if (playlists.isEmpty()) {
-                    Text("You have no playlists yet.", modifier = Modifier.padding(16.dp))
-                }
-                playlists.forEach { pw ->
-                    val checked = currentChecked[pw.userCreatedPlaylistId] == true
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable {
-                                currentChecked[pw.userCreatedPlaylistId] = !checked
-                            }
-                            .padding(vertical = 8.dp, horizontal = 16.dp)
-                    ) {
-                        Checkbox(
-                            checked = checked,
-                            onCheckedChange = { currentChecked[pw.userCreatedPlaylistId] = it }
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(pw.name, modifier = Modifier.weight(1f))
+                    Text("You have no playlists yet.", Modifier.padding(16.dp))
+                } else {
+                    playlists.forEach { pw ->
+                        val id = pw.userCreatedPlaylistId
+                        val checked = selectedIds.contains(id)
+
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    selectedIds = if (checked) selectedIds - id else selectedIds + id
+                                }
+                                .padding(vertical = 8.dp, horizontal = 16.dp)
+                        ) {
+                            Checkbox(
+                                checked = checked,
+                                onCheckedChange = { isNow ->
+                                    selectedIds = if (isNow) selectedIds + id else selectedIds - id
+                                }
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Text(pw.name, Modifier.weight(1f))
+                        }
                     }
                 }
             }
         },
         confirmButton = {
             TextButton(onClick = {
-                currentChecked.forEach { (playlistId, isNowChecked) ->
-                    val wasChecked = initialCheckedMap[playlistId] == true
-                    if (isNowChecked != wasChecked) {
-                        val action = if (isNowChecked)
-                            UserCreatedPlaylistTrackAction.ADD_TRACK
-                        else
-                            UserCreatedPlaylistTrackAction.REMOVE_TRACK
+                // figure out what was added vs removed
+                val toAdd    = selectedIds - initialSelectedIds
+                val toRemove = initialSelectedIds - selectedIds
 
-                        playlistManagementViewModel
-                            .addOrRemoveTrackFromPlaylist(track, playlistId, action)
-                    }
+                toAdd.forEach { pid ->
+                    playlistManagementViewModel.addOrRemoveTrackFromPlaylist(
+                        track, pid, UserCreatedPlaylistTrackAction.ADD_TRACK
+                    )
                 }
+                toRemove.forEach { pid ->
+                    playlistManagementViewModel.addOrRemoveTrackFromPlaylist(
+                        track, pid, UserCreatedPlaylistTrackAction.REMOVE_TRACK
+                    )
+                }
+
                 onDismiss()
             }) {
                 Text(confirmButtonText)

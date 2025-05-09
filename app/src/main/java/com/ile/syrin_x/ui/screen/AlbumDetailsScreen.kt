@@ -3,6 +3,7 @@ package com.ile.syrin_x.ui.screen
 import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -111,6 +112,26 @@ fun AlbumDetailsScreen(
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun LoadingState() {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        MyCircularProgress()
+    }
+}
+
+@Composable
+private fun ErrorState(errorMessage: String) {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(text = "Error: $errorMessage", color = Color.Red)
     }
 }
 

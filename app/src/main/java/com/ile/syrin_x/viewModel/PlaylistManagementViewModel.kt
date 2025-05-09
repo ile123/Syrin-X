@@ -22,6 +22,10 @@ import com.ile.syrin_x.domain.usecase.usercreatedplaylist.GetUserCreatedPlaylist
 import com.ile.syrin_x.domain.usecase.usercreatedplaylist.UpdateUserCreatedPlaylistUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -40,29 +44,42 @@ class PlaylistManagementViewModel @Inject constructor(
 ) : ViewModel() {
 
     val userPlaylists = mutableStateListOf<UserCreatedPlaylist>()
-    val userFavoriteTracks = mutableStateListOf<FavoriteTrack>()
+
+    private val _favorites = MutableStateFlow<List<FavoriteTrack>>(emptyList())
+    val favorites: StateFlow<List<FavoriteTrack>> = _favorites.asStateFlow()
 
     private val _dataFlow = MutableSharedFlow<Response<Any>>()
     val dataFlow = _dataFlow
 
-    fun addOrRemoveTrackFromFavorites(track: UnifiedTrack) = viewModelScope.launch {
-        getUserUidUseCase.invoke().collect { userUuid ->
-            addOrRemoveTrackFromFavoritesUseCase(track, userUuid).collect { response ->
-                when (response) {
-                    is Response.Error -> {
-                        _dataFlow.emit(Response.Error(response.message))
-                        Log.d("Playlist Management Error", response.message)
-                    }
-                    is Response.Loading -> { /* no-op */ }
-                    is Response.Success<*> -> {
-                        val favoriteTrack = response.data as FavoriteTrack
-                        if (userFavoriteTracks.none { it.favoriteTrackId == track.id }) {
-                            userFavoriteTracks.add(favoriteTrack)
-                        } else {
-                            userFavoriteTracks.removeAll { it.favoriteTrackId == track.id }
-                        }
-                    }
+    fun getAllUserFavoriteTracks() = viewModelScope.launch {
+        val userUuid = getUserUidUseCase.invoke().first()
+        getAllFavoriteTracksByUserUseCase(userUuid).collect { response ->
+            when (response) {
+                is Response.Success<*> -> {
+                    @Suppress("UNCHECKED_CAST")
+                    _favorites.value = response.data as List<FavoriteTrack>
                 }
+                is Response.Error -> {
+                    _dataFlow.emit(Response.Error(response.message))
+                    Log.d("PlaylistMgmtVM", "Error loading favorites: ${response.message}")
+                }
+                is Response.Loading -> {  }
+            }
+        }
+    }
+
+    fun addOrRemoveTrackFromFavorites(track: UnifiedTrack) = viewModelScope.launch {
+        val userUuid = getUserUidUseCase.invoke().first()
+        addOrRemoveTrackFromFavoritesUseCase(track, userUuid).collect { response ->
+            when (response) {
+                is Response.Success<*> -> {
+                    getAllUserFavoriteTracks()
+                }
+                is Response.Error -> {
+                    _dataFlow.emit(Response.Error(response.message))
+                    Log.d("PlaylistMgmtVM", "Error toggling favorite: ${response.message}")
+                }
+                is Response.Loading -> { }
             }
         }
     }
@@ -78,7 +95,7 @@ class PlaylistManagementViewModel @Inject constructor(
                     _dataFlow.emit(Response.Error(response.message))
                     Log.d("Playlist Management Error", response.message)
                 }
-                is Response.Loading -> { /* no-op */ }
+                is Response.Loading -> {  }
                 is Response.Success<*> -> {
                     val updatedPlaylist = response.data as UserCreatedPlaylist
                     val idx = userPlaylists.indexOfFirst { it.userCreatedPlaylistId == updatedPlaylist.userCreatedPlaylistId }
@@ -90,19 +107,18 @@ class PlaylistManagementViewModel @Inject constructor(
     }
 
     fun createPlaylist(name: String) = viewModelScope.launch {
-        getUserUidUseCase.invoke().collect { userUuid ->
-            createUserCreatedPlaylistUseCase(name, userUuid).collect { response ->
-                when (response) {
-                    is Response.Error -> {
-                        _dataFlow.emit(Response.Error(response.message))
-                        Log.d("Playlist Management Error", response.message)
-                    }
-                    is Response.Loading -> { /* no-op */ }
-                    is Response.Success<*> -> {
-                        val playlists = response.data as List<UserCreatedPlaylist>
-                        userPlaylists.clear()
-                        userPlaylists.addAll(playlists)
-                    }
+        val userUuid = getUserUidUseCase.invoke().first()
+        createUserCreatedPlaylistUseCase(name, userUuid).collect { response ->
+            when (response) {
+                is Response.Error -> {
+                    _dataFlow.emit(Response.Error(response.message))
+                    Log.d("Playlist Management Error", response.message)
+                }
+                is Response.Loading -> { }
+                is Response.Success<*> -> {
+                    val playlists = response.data as List<UserCreatedPlaylist>
+                    userPlaylists.clear()
+                    userPlaylists.addAll(playlists)
                 }
             }
         }
@@ -115,7 +131,7 @@ class PlaylistManagementViewModel @Inject constructor(
                     _dataFlow.emit(Response.Error(response.message))
                     Log.d("Playlist Management Error", response.message)
                 }
-                is Response.Loading -> { /* no-op */ }
+                is Response.Loading -> { }
                 is Response.Success<*> -> {
                     val removed = response.data as UserCreatedPlaylist
                     userPlaylists.removeAll { it.userCreatedPlaylistId == removed.userCreatedPlaylistId }
@@ -124,39 +140,19 @@ class PlaylistManagementViewModel @Inject constructor(
         }
     }
 
-    fun getAllUserFavoriteTracks() = viewModelScope.launch {
-        getUserUidUseCase.invoke().collect { userUuid ->
-            getAllFavoriteTracksByUserUseCase(userUuid).collect { response ->
-                when (response) {
-                    is Response.Error -> {
-                        _dataFlow.emit(Response.Error(response.message))
-                        Log.d("Playlist Management Error", response.message)
-                    }
-                    is Response.Loading -> { /* no-op */ }
-                    is Response.Success<*> -> {
-                        val favorites = response.data as List<FavoriteTrack>
-                        userFavoriteTracks.clear()
-                        userFavoriteTracks.addAll(favorites)
-                    }
-                }
-            }
-        }
-    }
-
     fun getAllUsersPlaylists() = viewModelScope.launch {
-        getUserUidUseCase.invoke().collect { userUuid ->
-            getAllUserCreatedPlaylistsByUserUseCase(userUuid).collect { response ->
-                when (response) {
-                    is Response.Error -> {
-                        _dataFlow.emit(Response.Error(response.message))
-                        Log.d("Playlist Management Error", response.message)
-                    }
-                    is Response.Loading -> { /* no-op */ }
-                    is Response.Success<*> -> {
-                        val playlists = response.data as List<UserCreatedPlaylist>
-                        userPlaylists.clear()
-                        userPlaylists.addAll(playlists)
-                    }
+        val userUuid = getUserUidUseCase.invoke().first()
+        getAllUserCreatedPlaylistsByUserUseCase(userUuid).collect { response ->
+            when (response) {
+                is Response.Error -> {
+                    _dataFlow.emit(Response.Error(response.message))
+                    Log.d("Playlist Management Error", response.message)
+                }
+                is Response.Loading -> { }
+                is Response.Success<*> -> {
+                    val playlists = response.data as List<UserCreatedPlaylist>
+                    userPlaylists.clear()
+                    userPlaylists.addAll(playlists)
                 }
             }
         }
@@ -164,34 +160,21 @@ class PlaylistManagementViewModel @Inject constructor(
 
     fun getFavoriteTrackById(favoriteTrackId: String) = viewModelScope.launch {
         getFavoriteTrackByIdUseCase(favoriteTrackId).collect { response ->
-            when (response) {
-                is Response.Error -> {
-                    _dataFlow.emit(Response.Error(response.message))
-                    Log.d("Playlist Management Error", response.message)
-                }
-                is Response.Loading -> { /* no-op */ }
-                is Response.Success<*> -> {
-                    val favorite = response.data as FavoriteTrack
-                    // Navigate to track details screen here
-                }
+            if (response is Response.Error) {
+                _dataFlow.emit(Response.Error(response.message))
+                Log.d("Playlist Management Error", response.message)
             }
+            // on success navigate
         }
     }
 
     fun getUserPlaylistById(playlistId: String) = viewModelScope.launch {
         getUserCreatedPlaylistByIdUseCase(playlistId).collect { response ->
-            when (response) {
-                is Response.Error -> {
-                    _dataFlow.emit(Response.Error(response.message))
-                    Log.d("Playlist Management Error", response.message)
-                }
-                is Response.Loading -> { /* no-op */ }
-                is Response.Success<*> -> {
-                    val playlist = response.data as UserCreatedPlaylist
-                    _dataFlow.emit(Response.Success(playlist))
-                }
-
-                else -> {}
+            if (response is Response.Success<*>) {
+                _dataFlow.emit(Response.Success(response.data as UserCreatedPlaylist))
+            } else if (response is Response.Error) {
+                _dataFlow.emit(Response.Error(response.message))
+                Log.d("Playlist Management Error", response.message)
             }
         }
     }
@@ -203,7 +186,7 @@ class PlaylistManagementViewModel @Inject constructor(
                     _dataFlow.emit(Response.Error(response.message))
                     Log.d("Playlist Management Error", response.message)
                 }
-                is Response.Loading -> { /* no-op */ }
+                is Response.Loading -> { }
                 is Response.Success<*> -> {
                     val updated = response.data as UserCreatedPlaylist
                     val idx = userPlaylists.indexOfFirst { it.userCreatedPlaylistId == updated.userCreatedPlaylistId }

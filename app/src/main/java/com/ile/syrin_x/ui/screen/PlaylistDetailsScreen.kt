@@ -113,6 +113,26 @@ fun PlaylistDetailsScreen(
 }
 
 @Composable
+private fun LoadingState() {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        MyCircularProgress()
+    }
+}
+
+@Composable
+private fun ErrorState(errorMessage: String) {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(text = "Error: $errorMessage", color = Color.Red)
+    }
+}
+
+@Composable
 fun Content(
     paddingValues: PaddingValues,
     searchFlowState: MutableSharedFlow<Response<Any>>,

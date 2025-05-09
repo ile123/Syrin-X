@@ -24,8 +24,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -44,12 +42,12 @@ import com.ile.syrin_x.viewModel.PlayerViewModel
 import com.ile.syrin_x.viewModel.PlaylistManagementViewModel
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import com.ile.syrin_x.ui.screen.common.AddTrackToPlaylistModal
 import com.ile.syrin_x.utils.formatDuration
 
@@ -62,29 +60,25 @@ fun TrackDetailsScreen(
     trackDetailsViewModel: TrackDetailsViewModel = hiltViewModel(),
     playlistManagementViewModel: PlaylistManagementViewModel = hiltViewModel()
 ) {
-    LaunchedEffect(trackId, musicSource) {
-        trackDetailsViewModel.getTrackDetails(trackId, musicSource)
-        playlistManagementViewModel.getAllUserFavoriteTracks()
-    }
-
-    val trackDetailsState by trackDetailsViewModel.searchFlow.collectAsState(initial = Response.Loading)
-    val favorites = playlistManagementViewModel.userFavoriteTracks
+    val favorites by playlistManagementViewModel.favorites.collectAsState()
 
     var showAddPlaylistDialog by remember { mutableStateOf(false) }
 
-    Scaffold(
-        modifier = Modifier.fillMaxSize()
-    ) { paddingValues ->
-        Image(
-            painter = painterResource(id = R.drawable.background_image_1),
-            contentDescription = null,
-            contentScale = ContentScale.FillBounds,
-            modifier = Modifier.fillMaxSize()
-        )
+    LaunchedEffect(trackId, musicSource) {
+        trackDetailsViewModel.getTrackDetails(trackId, musicSource)
+        playlistManagementViewModel.getAllUserFavoriteTracks()
+        playlistManagementViewModel.getAllUsersPlaylists()
+    }
 
-        when (val state = trackDetailsState) {
+    val trackDetailsState by trackDetailsViewModel.searchFlow.collectAsState(initial = Response.Loading)
+
+    Scaffold(modifier = Modifier.fillMaxSize()) { paddingValues ->
+        when (trackDetailsState) {
             is Response.Loading -> LoadingState()
-            is Response.Error   -> ErrorState(errorMessage = state.message)
+            is Response.Error -> {
+                val msg = (trackDetailsState as Response.Error).message
+                ErrorState(errorMessage = msg)
+            }
             is Response.Success -> {
                 val track = trackDetailsViewModel.trackDetails
                 Content(
@@ -116,7 +110,7 @@ fun TrackDetailsScreen(
 }
 
 @Composable
-fun LoadingState() {
+private fun LoadingState() {
     Box(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
@@ -126,7 +120,7 @@ fun LoadingState() {
 }
 
 @Composable
-fun ErrorState(errorMessage: String) {
+private fun ErrorState(errorMessage: String) {
     Box(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center

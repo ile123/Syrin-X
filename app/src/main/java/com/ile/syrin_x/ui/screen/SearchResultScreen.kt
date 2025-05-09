@@ -400,7 +400,7 @@ fun UnifiedUserRow(
     musicSource: MusicSource,
     navHostController: NavHostController,
     searchViewModel: SearchViewModel,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     val isFavorited = searchViewModel.favoriteArtists.any { it.id == user.id }
 
@@ -410,37 +410,47 @@ fun UnifiedUserRow(
             .fillMaxWidth()
             .padding(8.dp)
     ) {
+        // Avatar
         AsyncImage(
             model = user.avatarUrl,
-            contentDescription = "${user.name} avatar",
+            contentDescription = "${user.name ?: "User"} avatar",
             modifier = Modifier
                 .size(48.dp)
                 .clip(CircleShape)
         )
 
-        Spacer(modifier = Modifier.width(12.dp))
+        Spacer(Modifier.width(12.dp))
 
-        Column(modifier = Modifier.weight(1f)) {
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .clickable {
+                    navHostController.navigate("user_details_screen/${user.id}/${musicSource.name}")
+                }
+        ) {
             Text(
-                text = user.name ?: "Unknown User",
+                text = user.name.orEmpty(),
                 style = MaterialTheme.typography.labelSmall
             )
             user.type?.let { type ->
                 Text(
-                    text = type.replaceFirstChar { char -> char.uppercase(Locale.getDefault()) },
+                    text = type.replaceFirstChar { it.uppercase() },
                     style = MaterialTheme.typography.bodyMedium,
-                    color = Color.Gray
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                 )
             }
         }
 
         IconButton(onClick = {
-            searchViewModel.addOrRemoveArtistFromUserFavorites(user)
+            searchViewModel.toggleArtistFavorite(user)
         }) {
             Icon(
                 imageVector = Icons.Default.Favorite,
                 contentDescription = if (isFavorited) "Remove from favorites" else "Add to favorites",
-                tint = if (isFavorited) Color.Red else Color.Gray
+                tint = if (isFavorited)
+                    MaterialTheme.colorScheme.error
+                else
+                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
             )
         }
     }
