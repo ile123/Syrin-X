@@ -14,6 +14,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
@@ -31,10 +32,6 @@ import com.ile.syrin_x.viewModel.PlaylistManagementViewModel
 @Composable
 fun AddTrackToPlaylistModal(
     track: UnifiedTrack,
-    // You should only call this composable when you actually want to show it:
-    //   if (showAddDialog) {
-    //     AddTrackToPlaylistModal(track, onDismiss = { showAddDialog = false })
-    //   }
     onDismiss: () -> Unit,
     title: String = "Add to Playlist",
     confirmButtonText: String = "Done",
@@ -42,19 +39,22 @@ fun AddTrackToPlaylistModal(
     cancelable: Boolean = true,
     playlistManagementViewModel: PlaylistManagementViewModel = hiltViewModel()
 ) {
-    // This is your SnapshotStateList from the VM
-    val playlists = playlistManagementViewModel.userPlaylists
+    val playlists by playlistManagementViewModel.userPlaylists.collectAsState(initial = emptyList())
 
-    // Compute once—any time the *contents* change—what set of IDs the track is currently in
-    val initialSelectedIds = remember(playlists.map { it.userCreatedPlaylistId to it.tracks.map { t -> t.trackId }.toSet() }, track.id) {
+    val initialSelectedIds = remember(
+        playlists.map { it.userCreatedPlaylistId to it.tracks.map { t -> t.trackId }.toSet() },
+        track.id
+    ) {
         playlists
             .filter { pw -> pw.tracks.any { it.trackId == track.id } }
             .map { it.userCreatedPlaylistId }
             .toSet()
     }
 
-    // Backing state for all toggled checkboxes
-    var selectedIds by remember(playlists.map { it.userCreatedPlaylistId }, track.id) {
+    var selectedIds by remember(
+        playlists.map { it.userCreatedPlaylistId },
+        track.id
+    ) {
         mutableStateOf(initialSelectedIds)
     }
 
@@ -75,14 +75,16 @@ fun AddTrackToPlaylistModal(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable {
-                                    selectedIds = if (checked) selectedIds - id else selectedIds + id
+                                    selectedIds =
+                                        if (checked) selectedIds - id else selectedIds + id
                                 }
                                 .padding(vertical = 8.dp, horizontal = 16.dp)
                         ) {
                             Checkbox(
                                 checked = checked,
                                 onCheckedChange = { isNow ->
-                                    selectedIds = if (isNow) selectedIds + id else selectedIds - id
+                                    selectedIds =
+                                        if (isNow) selectedIds + id else selectedIds - id
                                 }
                             )
                             Spacer(Modifier.width(8.dp))
@@ -94,8 +96,7 @@ fun AddTrackToPlaylistModal(
         },
         confirmButton = {
             TextButton(onClick = {
-                // figure out what was added vs removed
-                val toAdd    = selectedIds - initialSelectedIds
+                val toAdd = selectedIds - initialSelectedIds
                 val toRemove = initialSelectedIds - selectedIds
 
                 toAdd.forEach { pid ->

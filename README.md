@@ -33,6 +33,9 @@
 ## Music Source Integration
 - **Multiple Music Sources**: Access music from different platforms such as SoundCloud, Deezer, etc.
 
+## New Songs Notification
+- **Notification**: When your favorite artist releases a new song(in the last week), it will send you a notification(which you can view in the notification screen)
+
 ---
 
 ## Optional Features

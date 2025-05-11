@@ -26,6 +26,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -43,7 +44,8 @@ class PlaylistManagementViewModel @Inject constructor(
     private val updateUserCreatedPlaylistUseCase: UpdateUserCreatedPlaylistUseCase
 ) : ViewModel() {
 
-    val userPlaylists = mutableStateListOf<UserCreatedPlaylist>()
+    private val _playlists = MutableStateFlow<List<UserCreatedPlaylist>>(emptyList())
+    val userPlaylists: StateFlow<List<UserCreatedPlaylist>> = _playlists.asStateFlow()
 
     private val _favorites = MutableStateFlow<List<FavoriteTrack>>(emptyList())
     val favorites: StateFlow<List<FavoriteTrack>> = _favorites.asStateFlow()
@@ -61,7 +63,6 @@ class PlaylistManagementViewModel @Inject constructor(
                 }
                 is Response.Error -> {
                     _dataFlow.emit(Response.Error(response.message))
-                    Log.d("PlaylistMgmtVM", "Error loading favorites: ${response.message}")
                 }
                 is Response.Loading -> {  }
             }
@@ -71,15 +72,10 @@ class PlaylistManagementViewModel @Inject constructor(
     fun addOrRemoveTrackFromFavorites(track: UnifiedTrack) = viewModelScope.launch {
         val userUuid = getUserUidUseCase.invoke().first()
         addOrRemoveTrackFromFavoritesUseCase(track, userUuid).collect { response ->
-            when (response) {
-                is Response.Success<*> -> {
-                    getAllUserFavoriteTracks()
-                }
-                is Response.Error -> {
-                    _dataFlow.emit(Response.Error(response.message))
-                    Log.d("PlaylistMgmtVM", "Error toggling favorite: ${response.message}")
-                }
-                is Response.Loading -> { }
+            if (response is Response.Success<*>) {
+                getAllUserFavoriteTracks()
+            } else if (response is Response.Error) {
+                _dataFlow.emit(Response.Error(response.message))
             }
         }
     }
@@ -91,17 +87,16 @@ class PlaylistManagementViewModel @Inject constructor(
     ) = viewModelScope.launch {
         addOrRemoveUserCreatedPlaylistTrackUseCase(track, playlistId, action).collect { response ->
             when (response) {
+                is Response.Success<*> -> {
+                    val updated = response.data as UserCreatedPlaylist
+                    _playlists.update { list ->
+                        list.map { if (it.userCreatedPlaylistId == updated.userCreatedPlaylistId) updated else it }
+                    }
+                }
                 is Response.Error -> {
                     _dataFlow.emit(Response.Error(response.message))
-                    Log.d("Playlist Management Error", response.message)
                 }
-                is Response.Loading -> {  }
-                is Response.Success<*> -> {
-                    val updatedPlaylist = response.data as UserCreatedPlaylist
-                    val idx = userPlaylists.indexOfFirst { it.userCreatedPlaylistId == updatedPlaylist.userCreatedPlaylistId }
-                    if (idx == -1) userPlaylists.add(updatedPlaylist)
-                    else userPlaylists[idx] = updatedPlaylist
-                }
+                is Response.Loading -> { }
             }
         }
     }
@@ -110,16 +105,14 @@ class PlaylistManagementViewModel @Inject constructor(
         val userUuid = getUserUidUseCase.invoke().first()
         createUserCreatedPlaylistUseCase(name, userUuid).collect { response ->
             when (response) {
+                is Response.Success<*> -> {
+                    @Suppress("UNCHECKED_CAST")
+                    _playlists.value = response.data as List<UserCreatedPlaylist>
+                }
                 is Response.Error -> {
                     _dataFlow.emit(Response.Error(response.message))
-                    Log.d("Playlist Management Error", response.message)
                 }
                 is Response.Loading -> { }
-                is Response.Success<*> -> {
-                    val playlists = response.data as List<UserCreatedPlaylist>
-                    userPlaylists.clear()
-                    userPlaylists.addAll(playlists)
-                }
             }
         }
     }
@@ -127,15 +120,16 @@ class PlaylistManagementViewModel @Inject constructor(
     fun deletePlaylist(playlistId: String) = viewModelScope.launch {
         deleteUserCreatedPlaylistUseCase(playlistId).collect { response ->
             when (response) {
-                is Response.Error -> {
-                    _dataFlow.emit(Response.Error(response.message))
-                    Log.d("Playlist Management Error", response.message)
-                }
-                is Response.Loading -> { }
                 is Response.Success<*> -> {
                     val removed = response.data as UserCreatedPlaylist
-                    userPlaylists.removeAll { it.userCreatedPlaylistId == removed.userCreatedPlaylistId }
+                    _playlists.update { list ->
+                        list.filterNot { it.userCreatedPlaylistId == removed.userCreatedPlaylistId }
+                    }
                 }
+                is Response.Error -> {
+                    _dataFlow.emit(Response.Error(response.message))
+                }
+                is Response.Loading -> { }
             }
         }
     }
@@ -143,17 +137,11 @@ class PlaylistManagementViewModel @Inject constructor(
     fun getAllUsersPlaylists() = viewModelScope.launch {
         val userUuid = getUserUidUseCase.invoke().first()
         getAllUserCreatedPlaylistsByUserUseCase(userUuid).collect { response ->
-            when (response) {
-                is Response.Error -> {
-                    _dataFlow.emit(Response.Error(response.message))
-                    Log.d("Playlist Management Error", response.message)
-                }
-                is Response.Loading -> { }
-                is Response.Success<*> -> {
-                    val playlists = response.data as List<UserCreatedPlaylist>
-                    userPlaylists.clear()
-                    userPlaylists.addAll(playlists)
-                }
+            if (response is Response.Success<*>) {
+                @Suppress("UNCHECKED_CAST")
+                _playlists.value = response.data as List<UserCreatedPlaylist>
+            } else if (response is Response.Error) {
+                _dataFlow.emit(Response.Error(response.message))
             }
         }
     }
@@ -162,9 +150,7 @@ class PlaylistManagementViewModel @Inject constructor(
         getFavoriteTrackByIdUseCase(favoriteTrackId).collect { response ->
             if (response is Response.Error) {
                 _dataFlow.emit(Response.Error(response.message))
-                Log.d("Playlist Management Error", response.message)
             }
-            // on success navigate
         }
     }
 
@@ -174,7 +160,6 @@ class PlaylistManagementViewModel @Inject constructor(
                 _dataFlow.emit(Response.Success(response.data as UserCreatedPlaylist))
             } else if (response is Response.Error) {
                 _dataFlow.emit(Response.Error(response.message))
-                Log.d("Playlist Management Error", response.message)
             }
         }
     }
@@ -182,16 +167,16 @@ class PlaylistManagementViewModel @Inject constructor(
     fun updateUserPlaylist(playlistId: String, newName: String) = viewModelScope.launch {
         updateUserCreatedPlaylistUseCase(newName, playlistId).collect { response ->
             when (response) {
-                is Response.Error -> {
-                    _dataFlow.emit(Response.Error(response.message))
-                    Log.d("Playlist Management Error", response.message)
-                }
-                is Response.Loading -> { }
                 is Response.Success<*> -> {
                     val updated = response.data as UserCreatedPlaylist
-                    val idx = userPlaylists.indexOfFirst { it.userCreatedPlaylistId == updated.userCreatedPlaylistId }
-                    if (idx != -1) userPlaylists[idx] = updated
+                    _playlists.update { list ->
+                        list.map { if (it.userCreatedPlaylistId == updated.userCreatedPlaylistId) updated else it }
+                    }
                 }
+                is Response.Error -> {
+                    _dataFlow.emit(Response.Error(response.message))
+                }
+                is Response.Loading -> { }
             }
         }
     }

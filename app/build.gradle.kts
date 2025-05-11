@@ -117,4 +117,7 @@ dependencies {
     implementation(libs.androidx.media2.player)
     implementation(libs.androidx.media2.widget)
     implementation(libs.extension.mediasession)
+    implementation(libs.androidx.datastore.preferences)
+    implementation(libs.androidx.foundation)
+    implementation(libs.accompanist.pager.indicators)
 }

@@ -15,7 +15,7 @@ fun MyCircularProgress() {
     Box(modifier = Modifier.fillMaxSize()) {
         CircularProgressIndicator(
             modifier = Modifier
-                .width(64.dp)
+                .width(128.dp)
                 .align(Alignment.Center),
             color = MaterialTheme.colorScheme.secondary,
             trackColor = MaterialTheme.colorScheme.surfaceVariant,

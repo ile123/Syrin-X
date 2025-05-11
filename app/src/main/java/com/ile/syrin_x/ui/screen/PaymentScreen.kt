@@ -16,9 +16,21 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountBox
+import androidx.compose.material.icons.filled.AddCircle
+import androidx.compose.material.icons.filled.Call
+import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -38,6 +50,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -128,7 +141,6 @@ fun Content(
 
     fun submit() {
         val errors = mutableListOf<String>()
-
         if (cardNumber.isBlank()) errors.add("Card number is required.")
         if (expiryMonth.toIntOrNull() !in 1..12) errors.add("Invalid expiry month.")
         if (expiryYear.length != 2 || expiryYear.toIntOrNull() == null) errors.add("Invalid expiry year.")
@@ -143,98 +155,145 @@ fun Content(
         }
 
         val cardDetails = CardDetails(cardNumber, expiryMonth, expiryYear, cvc, postalCode)
-
         val cardParams = PaymentMethodCreateParams.Card.Builder()
             .setNumber(cardNumber)
             .setExpiryMonth(expiryMonth.toInt())
             .setExpiryYear("20$expiryYear".toInt())
             .setCvc(cvc)
             .build()
-
         val billingDetails = PaymentMethod.BillingDetails.Builder()
-            .setAddress(
-                Address.Builder()
-                    .setPostalCode(postalCode)
-                    .build()
-            ).build()
-
+            .setAddress(Address.Builder().setPostalCode(postalCode).build())
+            .build()
         val paymentMethodParams = PaymentMethodCreateParams.create(cardParams, billingDetails)
 
         onSubmit(cardDetails, amount.toInt(), paymentMethodParams)
     }
 
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxSize()
             .padding(paddingValues)
             .padding(16.dp)
     ) {
-        OutlinedTextField(
-            value = cardNumber,
-            onValueChange = { cardNumber = it },
-            label = { Text("Card Number") },
-            placeholder = { Text("4242 4242 4242 4242") },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            modifier = Modifier.fillMaxWidth()
+        Text(
+            text = "Payment Details",
+            style = MaterialTheme.typography.displayMedium,
+            fontWeight = FontWeight.SemiBold,
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .padding(top = 8.dp)
         )
 
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Row {
-            OutlinedTextField(
-                value = expiryMonth,
-                onValueChange = { expiryMonth = it },
-                label = { Text("MM") },
-                modifier = Modifier.weight(1f),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            OutlinedTextField(
-                value = expiryYear,
-                onValueChange = { expiryYear = it },
-                label = { Text("YY") },
-                modifier = Modifier.weight(1f),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-            )
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        OutlinedTextField(
-            value = cvc,
-            onValueChange = { cvc = it },
-            label = { Text("CVC") },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        OutlinedTextField(
-            value = postalCode,
-            onValueChange = { postalCode = it },
-            label = { Text("ZIP / Postal Code") },
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        OutlinedTextField(
-            value = amount,
-            onValueChange = { amount = it },
-            label = { Text("Amount (in cents)") },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Button(
-            onClick = ::submit,
-            modifier = Modifier.fillMaxWidth()
+        Card(
+            modifier = Modifier
+                .align(Alignment.Center)
+                .fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
         ) {
-            Text("Submit Payment")
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                OutlinedTextField(
+                    value = cardNumber,
+                    onValueChange = { cardNumber = it },
+                    label = { Text("Card Number") },
+                    placeholder = { Text("4242 4242 4242 4242") },
+                    singleLine = true,
+                    leadingIcon = {
+                        Icon(Icons.Default.Lock, contentDescription = null)
+                    },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(8.dp)
+                )
+
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(
+                        value = expiryMonth,
+                        onValueChange = { expiryMonth = it },
+                        label = { Text("MM") },
+                        singleLine = true,
+                        leadingIcon = {
+                            Icon(Icons.Default.DateRange, contentDescription = null)
+                        },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(8.dp)
+                    )
+                    OutlinedTextField(
+                        value = expiryYear,
+                        onValueChange = { expiryYear = it },
+                        label = { Text("YY") },
+                        singleLine = true,
+                        leadingIcon = {
+                            Icon(Icons.Default.DateRange, contentDescription = null)
+                        },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(8.dp)
+                    )
+                }
+
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(
+                        value = cvc,
+                        onValueChange = { cvc = it },
+                        label = { Text("CVC") },
+                        singleLine = true,
+                        leadingIcon = {
+                            Icon(Icons.Default.Lock, contentDescription = null)
+                        },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(8.dp)
+                    )
+                    OutlinedTextField(
+                        value = postalCode,
+                        onValueChange = { postalCode = it },
+                        label = { Text("ZIP") },
+                        singleLine = true,
+                        leadingIcon = {
+                            Icon(Icons.Default.LocationOn, contentDescription = null)
+                        },
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(8.dp)
+                    )
+                }
+
+                OutlinedTextField(
+                    value = amount,
+                    onValueChange = { amount = it },
+                    label = { Text("Amount (in cents)") },
+                    singleLine = true,
+                    leadingIcon = {
+                        Text("$", style = MaterialTheme.typography.bodyLarge)
+                    },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(8.dp)
+                )
+
+                Button(
+                    onClick = ::submit,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text("Submit Payment")
+                }
+            }
         }
+
+        PaymentState(
+            paymentFlowState = paymentFlowState,
+            onSuccess = paymentSuccess,
+            onError = paymentError
+        )
 
         if (showDialog) {
             MyAlertDialog(
@@ -247,8 +306,6 @@ fun Content(
                 cancelable = true
             )
         }
-
-        PaymentState(paymentFlowState, onSuccess = paymentSuccess, onError = paymentError)
     }
 }
 

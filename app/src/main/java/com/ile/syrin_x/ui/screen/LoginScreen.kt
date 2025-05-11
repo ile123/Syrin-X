@@ -1,22 +1,27 @@
 package com.ile.syrin_x.ui.screen
 
-import android.Manifest
 import android.util.Log
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -33,8 +38,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -46,10 +49,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.google.firebase.auth.AuthResult
-import com.ile.syrin_x.R
 import com.ile.syrin_x.domain.core.Response
 import com.ile.syrin_x.ui.navigation.NavigationGraph
-import com.ile.syrin_x.ui.screen.common.MyAlertDialog
 import com.ile.syrin_x.ui.screen.common.MyCircularProgress
 import com.ile.syrin_x.viewModel.LoginViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -65,27 +66,26 @@ fun LoginScreen(
         SnackbarHostState()
     }
 
-        Scaffold(
-            snackbarHost = { SnackbarHost(hostState = hostState) },
-            modifier = Modifier.fillMaxSize()
-        ) { paddingValues ->
-            Image(
-                painter = painterResource(id = R.drawable.background_image_1),
-                contentDescription = "Background image",
-                contentScale = ContentScale.FillBounds,
-                modifier = Modifier.fillMaxSize()
-            )
-            Content(
-                hostState = hostState,
-                paddingValues = paddingValues,
-                signInStateFlow = loginViewModel.loginFlow,
-                resetPasswordStateFlow = loginViewModel.resetPasswordFlow,
-                onRegisterNow = { navHostController.navigate(NavigationGraph.RegisterScreen.route) },
-                onForgotPassword = { email -> loginViewModel.resetPassword(email) },
-                onLogin = { email, password -> loginViewModel.login(email, password) },
-                loginSuccess = { navHostController.navigate(NavigationGraph.HomeScreen.route) { popUpTo(0) } }
-            )
-        }
+    Scaffold(
+        snackbarHost = { SnackbarHost(hostState = hostState) },
+        modifier = Modifier.fillMaxSize()
+    ) { paddingValues ->
+        Content(
+            hostState = hostState,
+            paddingValues = paddingValues,
+            signInStateFlow = loginViewModel.loginFlow,
+            resetPasswordStateFlow = loginViewModel.resetPasswordFlow,
+            onRegisterNow = { navHostController.navigate(NavigationGraph.RegisterScreen.route) },
+            onLogin = { email, password -> loginViewModel.login(email, password) },
+            loginSuccess = {
+                navHostController.navigate(NavigationGraph.HomeScreen.route) {
+                    popUpTo(
+                        0
+                    )
+                }
+            }
+        )
+    }
 }
 
 @Composable
@@ -94,123 +94,110 @@ fun Content(
     signInStateFlow: MutableSharedFlow<Response<AuthResult>>,
     resetPasswordStateFlow: MutableSharedFlow<Response<Void?>>,
     onRegisterNow: () -> Unit,
-    onForgotPassword: (String) -> Unit,
     onLogin: (String, String) -> Unit,
     loginSuccess: () -> Unit,
     hostState: SnackbarHostState
 ) {
-    val emailText = remember {
-        mutableStateOf("")
-    }
-    val passwordText = remember {
-        mutableStateOf("")
-    }
-    var showForgotPasswordDialog by remember {
-        mutableStateOf(false)
-    }
+    var emailText by remember { mutableStateOf("") }
+    var passwordText by remember { mutableStateOf("") }
     val scope = rememberCoroutineScope()
 
-    if (showForgotPasswordDialog)
-        MyAlertDialog(
-            onDismissRequest = { showForgotPasswordDialog = false },
-            onConfirmation = {
-                if (emailText.value != "") {
-                    onForgotPassword(emailText.value)
-                    showForgotPasswordDialog = false
-                } else {
-                    scope.launch {
-                        hostState.showSnackbar("Please enter email address")
-                    }
-                }
-            },
-            title = "Forgot Password?",
-            text = "Send a password reset email to entered email address.",
-            confirmButtonText = "Send",
-            dismissButtonText = "Cancel",
-            cancelable = true
-        )
-
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxSize()
             .padding(paddingValues)
     ) {
-        Text(
-            text = "Login",
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(start = 25.dp, end = 20.dp, top = 20.dp),
-            style = MaterialTheme.typography.displayMedium,
-            fontWeight = FontWeight.SemiBold
-        )
-        Text(
-            text = "Please sign in to continue.",
+                .align(Alignment.TopCenter)
+                .padding(top = 24.dp)
+        ) {
+            Text(
+                text = "Login",
+                style = MaterialTheme.typography.displayMedium,
+                fontWeight = FontWeight.SemiBold
+            )
+        }
+
+        Card(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(start = 25.dp, end = 20.dp, top = 5.dp),
-            style = MaterialTheme.typography.bodyLarge
-        )
-        TextField(
-            modifier = Modifier
-                .fillMaxWidth()
-                .wrapContentHeight()
-                .padding(start = 20.dp, end = 20.dp, top = 40.dp),
-            singleLine = true,
-            value = emailText.value,
-            onValueChange = { text -> emailText.value = text },
-            label = { Text("Email") },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-            leadingIcon = { Icon(Icons.Filled.Email, "email") }
-        )
-        TextField(
-            modifier = Modifier
-                .fillMaxWidth()
-                .wrapContentHeight()
-                .padding(20.dp),
-            singleLine = true,
-            value = passwordText.value,
-            onValueChange = { text -> passwordText.value = text },
-            label = { Text("Password") },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-            visualTransformation = PasswordVisualTransformation(),
-            leadingIcon = { Icon(Icons.Filled.Lock, "password") }
-        )
-        Button(
-            onClick = {
-                onLogin(emailText.value, passwordText.value)
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .wrapContentHeight()
-                .padding(start = 20.dp, end = 20.dp, top = 20.dp),
-            content = { Text(text = "Login") }
-        )
-        Text(
-            color = MaterialTheme.colorScheme.primary,
-            text = "Forgot Password?",
-            modifier = Modifier
-                .wrapContentWidth()
-                .wrapContentHeight()
-                .align(alignment = Alignment.CenterHorizontally)
-                .padding(start = 20.dp, end = 20.dp, top = 10.dp)
-                .clickable { showForgotPasswordDialog = true },
-            style = MaterialTheme.typography.titleMedium
-        )
-        Spacer(modifier = Modifier.weight(1f))
+                .align(Alignment.Center)
+                .padding(horizontal = 20.dp),
+            shape = RoundedCornerShape(12.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+        ) {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+            ) {
+                TextField(
+                    value = emailText,
+                    onValueChange = { emailText = it },
+                    label = {
+                        Text(
+                            "Email",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Normal
+                        )
+                    },
+                    placeholder = { Text("you@example.com") },
+                    singleLine = true,
+                    leadingIcon = { Icon(Icons.Filled.Email, contentDescription = "Email") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(8.dp)
+                )
+                TextField(
+                    value = passwordText,
+                    onValueChange = { passwordText = it },
+                    label = {
+                        Text(
+                            "Password",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Normal
+                        )
+                    },
+                    singleLine = true,
+                    leadingIcon = { Icon(Icons.Filled.Lock, contentDescription = "Password") },
+                    visualTransformation = PasswordVisualTransformation(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(8.dp)
+                )
+                Button(
+                    onClick = { onLogin(emailText, passwordText) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text(
+                        text = "Login",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Normal
+                    )
+                }
+            }
+        }
+
         Text(
             text = buildAnnotatedString {
                 append("Don't have an account?")
-                withStyle(style = SpanStyle(MaterialTheme.colorScheme.primary)) { append(" Register now") }
+                withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary)) {
+                    append(" Register now")
+                }
             },
+            style = MaterialTheme.typography.titleMedium,
             modifier = Modifier
-                .wrapContentWidth()
-                .wrapContentHeight()
-                .align(alignment = Alignment.CenterHorizontally)
-                .padding(20.dp)
-                .clickable { onRegisterNow() },
-            style = MaterialTheme.typography.titleMedium
+                .align(Alignment.BottomCenter)
+                .clickable { onRegisterNow() }
+                .padding(bottom = 24.dp)
         )
     }
+
     LoginInState(
         flow = signInStateFlow,
         onSuccess = { loginSuccess() },

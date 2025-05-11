@@ -10,15 +10,20 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
 import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.ile.syrin_x.domain.repository.DataStoreRepository
 import com.ile.syrin_x.service.TokenMonitorService
 import com.ile.syrin_x.ui.navigation.SetUpNavigationGraph
 import com.ile.syrin_x.ui.screen.player.PlayerScaffold
+import com.ile.syrin_x.ui.theme.AppTheme
 import com.ile.syrin_x.ui.theme.SyrinXTheme
 import com.ile.syrin_x.utils.StripeInitializer
 import com.ile.syrin_x.utils.extractAuthorizationCode
@@ -40,17 +45,29 @@ class MainActivity : ComponentActivity() {
     private val paymentViewModel: PaymentViewModel by viewModels()
 
     @Inject
+    lateinit var datastoreRepository: DataStoreRepository
+
+    @Inject
     lateinit var stripeInitializer: StripeInitializer
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
+            val defaultTheme = AppTheme.SystemDefault
+            val appTheme by produceState(initialValue = defaultTheme, key1 = datastoreRepository) {
+                val storedName = datastoreRepository.getString("app_theme")
+                value = storedName
+                    ?.let { name -> AppTheme.values().find { it.name == name } }
+                    ?: defaultTheme
+            }
+
             val viewModel: PlayerViewModel = hiltViewModel()
-            SyrinXTheme {
+            SyrinXTheme(appTheme = appTheme) {
                 PlayerScaffold(viewModel = viewModel) {
                     Surface(
-                        modifier = Modifier.fillMaxSize(),
+                        modifier = Modifier
+                            .fillMaxSize(),
                         color = MaterialTheme.colorScheme.background
                     ) {
                         SetUpNavigationGraph(viewModel)
@@ -81,18 +98,17 @@ class MainActivity : ComponentActivity() {
                     Toast.makeText(this@MainActivity, "Payment successful", Toast.LENGTH_SHORT).show()
                 } else {
                     val error = result.intent.lastPaymentError?.message ?: "Payment failed"
-                    Log.e("Payment", "❌ Payment failed: $error")
+                    Log.e("Payment", "Payment failed: $error")
                     Toast.makeText(this@MainActivity, "Payment failed: $error", Toast.LENGTH_LONG).show()
                 }
             }
 
             override fun onError(e: Exception) {
-                Log.e("Payment", "❌ Error: ${e.localizedMessage}")
+                Log.e("Payment", "Error: ${e.localizedMessage}")
                 Toast.makeText(this@MainActivity, "Payment error: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
             }
         })
     }
-
 
     private fun handleDeepLink(uri: Uri?) {
         uri?.let {

@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,8 +19,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -37,9 +40,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -53,7 +59,9 @@ import com.ile.syrin_x.data.model.entity.PreviouslyPlayedTrack
 import com.ile.syrin_x.data.model.usercreatedplaylist.FavoriteTrack
 import com.ile.syrin_x.domain.core.Response
 import com.ile.syrin_x.ui.navigation.NavigationGraph
+import com.ile.syrin_x.ui.screen.common.BottomBarNavigationComponent
 import com.ile.syrin_x.ui.screen.common.EditProfileDialog
+import com.ile.syrin_x.ui.screen.common.HeaderComponent
 import com.ile.syrin_x.ui.screen.common.MyCircularProgress
 import com.ile.syrin_x.viewModel.ProfileViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -65,13 +73,13 @@ fun ProfileScreen(
     profileViewModel: ProfileViewModel = hiltViewModel()
 ) {
     val scope = rememberCoroutineScope()
-    val hostState = remember { SnackbarHostState() }
+    val snackbarHostState = remember { SnackbarHostState() }
     val context = LocalContext.current
 
     var showEditDialog by remember { mutableStateOf(false) }
 
     val userInfo by profileViewModel.userInfo
-    val profileImage = profileViewModel.userProfileImage.value
+    val profileImage by profileViewModel.userProfileImage
 
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -79,59 +87,55 @@ fun ProfileScreen(
         profileViewModel.changeUserProfile(uri, context)
     }
 
-    fun updateProfileInfo(userName: String, fullName: String) {
-        profileViewModel.updateUserInfo(userName, fullName)
-    }
-
-    fun changeProfilePicture() {
-        launcher.launch("image/*")
-    }
-
     LaunchedEffect(Unit) {
         profileViewModel.getUserInfo()
     }
 
     Scaffold(
-        snackbarHost = { SnackbarHost(hostState = hostState) },
+        topBar = {
+            HeaderComponent(navHostController)
+        },
+        bottomBar = {
+            BottomBarNavigationComponent(navHostController)
+        },
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = {
-            FloatingActionButton(onClick = { showEditDialog = true }) {
-                Icon(imageVector = Icons.Default.Edit, contentDescription = "Edit Profile")
+            FloatingActionButton(
+                onClick = { showEditDialog = true },
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary
+            ) {
+                Icon(Icons.Default.Edit, contentDescription = "Edit Profile")
             }
         },
         modifier = Modifier.fillMaxSize()
     ) { paddingValues ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+        ) {
 
-        Image(
-            painter = painterResource(id = R.drawable.background_image_1),
-            contentDescription = "Background image",
-            contentScale = ContentScale.FillBounds,
-            modifier = Modifier.fillMaxSize()
-        )
-
-        Content(
-            navHostController = navHostController,
-            paddingValues = paddingValues,
-            profileFlow = profileViewModel.profileFlow,
-            profileError = { errorMessage ->
-                scope.launch {
-                    hostState.showSnackbar(errorMessage)
-                }
-            },
-            userInfo = userInfo,
-            profileImage = profileImage,
-            onChangeProfilePicture = ::changeProfilePicture,
-            favoriteArtists = profileViewModel.favoriteArtists,
-            favoriteTracks = profileViewModel.favoriteTracks,
-            previouslyPlayedTracks = profileViewModel.previouslyPlayedTracks
-        )
+            ProfileContent(
+                navHostController = navHostController,
+                profileFlow = profileViewModel.profileFlow,
+                onError = { msg -> scope.launch { snackbarHostState.showSnackbar(msg) } },
+                userInfo = userInfo,
+                profileImageUri = profileImage,
+                onChangeProfilePicture = { launcher.launch("image/*") },
+                previouslyPlayedTracks = profileViewModel.previouslyPlayedTracks,
+                favoriteArtists = profileViewModel.favoriteArtists,
+                favoriteTracks = profileViewModel.favoriteTracks
+            )
+        }
 
         if (showEditDialog) {
             EditProfileDialog(
                 currentUsername = userInfo.userName,
                 currentFullName = userInfo.fullName,
                 onDismiss = { showEditDialog = false },
-                onConfirm = { newUserName, newFullName ->
-                    updateProfileInfo(newUserName, newFullName)
+                onConfirm = { newUser, newFull ->
+                    profileViewModel.updateUserInfo(newUser, newFull)
                     showEditDialog = false
                 }
             )
@@ -140,135 +144,165 @@ fun ProfileScreen(
 }
 
 @Composable
-fun Content(
+private fun ProfileContent(
     navHostController: NavHostController,
-    paddingValues: PaddingValues,
     profileFlow: MutableSharedFlow<Response<Any>>,
-    profileError: (error: String) -> Unit,
+    onError: (String) -> Unit,
     userInfo: UserInfo,
-    profileImage: String,
+    profileImageUri: String,
     onChangeProfilePicture: () -> Unit,
+    previouslyPlayedTracks: List<PreviouslyPlayedTrack>,
     favoriteArtists: List<FavoriteArtist>,
-    favoriteTracks: List<FavoriteTrack>,
-    previouslyPlayedTracks: List<PreviouslyPlayedTrack>
+    favoriteTracks: List<FavoriteTrack>
 ) {
-
-    val profileImageUri = rememberAsyncImagePainter(
-        model = profileImage.ifBlank { R.drawable.default_profile_picture }
+    val painter = rememberAsyncImagePainter(
+        model = profileImageUri.ifBlank { R.drawable.default_profile_picture }
     )
 
     LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(paddingValues),
-        contentPadding = PaddingValues(bottom = 80.dp)
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(bottom = 80.dp, top = 16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
         item {
-            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                Image(
-                    painter = profileImageUri,
-                    contentDescription = "Profile Picture",
-                    modifier = Modifier
-                        .size(100.dp)
-                        .clip(CircleShape)
-                        .clickable { onChangeProfilePicture() },
-                    contentScale = ContentScale.Crop
-                )
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-                Text("Username: ${userInfo.userName}", fontSize = 18.sp)
-                Text("Full Name: ${userInfo.fullName}", fontSize = 18.sp)
-                Text("Email: ${userInfo.email}", fontSize = 16.sp)
-                Text(
-                    text = "Get premium",
-                    fontSize = 24.sp,
-                    modifier = Modifier.clickable {
-                        navHostController.navigate(NavigationGraph.PaymentScreen.route)
-                    }
-                )
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
+            ProfileHeader(
+                userInfo = userInfo,
+                imagePainter = painter,
+                onChangeProfilePicture = onChangeProfilePicture,
+                onGetPremium = { navHostController.navigate(NavigationGraph.PaymentScreen.route) }
+            )
         }
 
         item {
-            Text(
-                text = "Previously Played Tracks",
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.padding(horizontal = 16.dp)
-            )
+            SectionHeader("Previously Played Tracks")
             Box(
                 modifier = Modifier
+                    .fillMaxWidth()
                     .height(150.dp)
                     .padding(horizontal = 16.dp)
+                    .border(
+                        width = 1.dp,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
+                        shape = RoundedCornerShape(8.dp)
+                    )
+                    .padding(8.dp)
             ) {
                 if (previouslyPlayedTracks.isEmpty()) {
-                    Text("No previously played tracks found.")
+                    Text(
+                        "No previously played tracks found.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        textAlign = TextAlign.Center,
+                        fontWeight = FontWeight.Medium
+                    )
                 } else {
-                    LazyColumn {
-                        itemsIndexed(previouslyPlayedTracks, key = { _, item -> item.trackId + "_previouslyPlayedTrack" }) { _, track ->
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxWidth(0.8f)
+                            .align(Alignment.TopCenter)
+                    ) {
+                        itemsIndexed(
+                            previouslyPlayedTracks,
+                            key = { _, t -> t.trackId }
+                        ) { _, track ->
                             Text(
-                                text = "• ${track.title ?: "Unknown Track"}",
-                                modifier = Modifier.padding(vertical = 4.dp)
+                                "• ${track.title ?: "Unknown Track"} (${track.artists?.get(0)})",
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 4.dp),
+                                style = MaterialTheme.typography.headlineSmall,
+                                fontWeight = FontWeight.Normal
                             )
                         }
                     }
                 }
             }
-
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(Modifier.height(24.dp))
         }
 
         item {
-            Text(
-                text = "Favorite Artists",
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.padding(horizontal = 16.dp)
-            )
+            SectionHeader("Favorite Artists")
             Box(
                 modifier = Modifier
+                    .fillMaxWidth()
                     .height(150.dp)
                     .padding(horizontal = 16.dp)
+                    .border(
+                        width = 1.dp,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
+                        shape = RoundedCornerShape(8.dp)
+                    )
+                    .padding(8.dp)
             ) {
                 if (favoriteArtists.isEmpty()) {
-                    Text("No favorite artists found.")
+                    Text(
+                        "No favorite artists found.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        textAlign = TextAlign.Center,
+                        fontWeight = FontWeight.Medium
+                    )
                 } else {
-                    LazyColumn {
-                        itemsIndexed(favoriteArtists, key = { _, item -> item.id + "_favoriteArtist" }) { _, artist ->
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxWidth(0.8f)
+                            .align(Alignment.TopCenter)
+                    ) {
+                        itemsIndexed(
+                            favoriteArtists,
+                            key = { _, a -> a.id }
+                        ) { _, artist ->
                             Text(
-                                text = "• ${artist.name}",
-                                modifier = Modifier.padding(vertical = 4.dp)
+                                "• ${artist.name}",
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 4.dp),
+                                style = MaterialTheme.typography.headlineSmall,
+                                fontWeight = FontWeight.Normal
                             )
                         }
                     }
                 }
             }
-
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(Modifier.height(24.dp))
         }
 
         item {
-            Text(
-                text = "Favorite Tracks",
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.padding(horizontal = 16.dp)
-            )
+            SectionHeader("Favorite Tracks")
             Box(
                 modifier = Modifier
+                    .fillMaxWidth()
                     .height(150.dp)
                     .padding(horizontal = 16.dp)
+                    .border(
+                        width = 1.dp,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
+                        shape = RoundedCornerShape(8.dp)
+                    )
+                    .padding(8.dp)
             ) {
                 if (favoriteTracks.isEmpty()) {
-                    Text("No favorite tracks found.")
+                    Text(
+                        "No favorite tracks found.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        textAlign = TextAlign.Center,
+                        fontWeight = FontWeight.Medium
+                    )
                 } else {
-                    LazyColumn {
-                        itemsIndexed(favoriteTracks, key = { _, item -> item.favoriteTrackId + "_favoriteTrack" }) { _, track ->
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxWidth(0.8f)
+                            .align(Alignment.TopCenter)
+                    ) {
+                        itemsIndexed(
+                            favoriteTracks,
+                            key = { _, t -> t.favoriteTrackId }
+                        ) { _, track ->
                             Text(
-                                text = "• ${track.name} - ${track.artist}",
-                                modifier = Modifier.padding(vertical = 4.dp)
+                                "• ${track.name} (${track.artist})",
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 4.dp),
+                                style = MaterialTheme.typography.headlineSmall,
+                                fontWeight = FontWeight.Normal
                             )
                         }
                     }
@@ -277,36 +311,110 @@ fun Content(
         }
     }
 
-
     ProfileState(
         profileFlowState = profileFlow,
-        onSuccess = {},
-        onError = profileError
+        onError = onError
     )
 }
 
+@Composable
+private fun ProfileHeader(
+    userInfo: UserInfo,
+    imagePainter: Painter,
+    onChangeProfilePicture: () -> Unit,
+    onGetPremium: () -> Unit
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            "Created Playlists",
+            style = MaterialTheme.typography.displaySmall,
+            textAlign = TextAlign.Center,
+            fontWeight = FontWeight.Normal
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Image(
+            painter = imagePainter,
+            contentDescription = "Profile",
+            modifier = Modifier
+                .size(100.dp)
+                .clip(CircleShape)
+                .clickable { onChangeProfilePicture() },
+            contentScale = ContentScale.Crop
+        )
+    }
+
+    Spacer(modifier = Modifier.height(12.dp))
+
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Text(
+            text = userInfo.userName,
+            style = MaterialTheme.typography.headlineSmall
+        )
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(
+            text = userInfo.fullName,
+            style = MaterialTheme.typography.titleMedium
+        )
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(
+            text = userInfo.email,
+            fontSize = 14.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = "Get premium",
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Normal,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.clickable { onGetPremium() }
+        )
+    }
+
+    Spacer(modifier = Modifier.height(24.dp))
+}
 
 @Composable
-fun ProfileState(
+private fun SectionHeader(title: String) {
+    Text(
+        title,
+        style = MaterialTheme.typography.titleLarge,
+        textAlign = TextAlign.Center,
+        fontWeight = FontWeight.SemiBold,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp)
+    )
+}
+
+@Composable
+private fun ProfileState(
     profileFlowState: MutableSharedFlow<Response<Any>>,
-    onSuccess: () -> Unit,
-    onError: (error: String) -> Unit
+    onError: (String) -> Unit
 ) {
-    val isLoading = remember { mutableStateOf(false) }
-    if (isLoading.value) MyCircularProgress()
-    LaunchedEffect(Unit) {
-        profileFlowState.collect {
-            when (it) {
-                is Response.Loading -> isLoading.value = true
+    var isLoading by remember { mutableStateOf(false) }
+    LaunchedEffect(profileFlowState) {
+        profileFlowState.collect { response ->
+            when (response) {
+                is Response.Loading -> isLoading = true
                 is Response.Error -> {
-                    isLoading.value = false
-                    onError(it.message)
+                    isLoading = false
+                    onError(response.message)
                 }
-                is Response.Success -> {
-                    isLoading.value = false
-                    onSuccess()
-                }
+
+                is Response.Success -> isLoading = false
             }
+        }
+    }
+    if (isLoading) {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            MyCircularProgress()
         }
     }
 }
