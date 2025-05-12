@@ -2,8 +2,13 @@ package com.ile.syrin_x.ui.screen.player
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -11,7 +16,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import com.ile.syrin_x.viewModel.PlayerViewModel
 
 @Composable
@@ -24,6 +32,7 @@ fun PlayerScaffold(
     val duration by viewModel.duration.collectAsState()
     val position by viewModel.playbackPosition.collectAsState()
     val repeatMode = viewModel.audioPlayer.currentRepeatMode
+    val shuffleMode = viewModel.audioPlayer.currentShuffleMode
 
     var showFullPlayer by remember { mutableStateOf(false) }
 
@@ -35,25 +44,26 @@ fun PlayerScaffold(
         }
     }
 
-    if (showFullPlayer) {
-        BackHandler {
-            showFullPlayer = false
-        }
-    }
-
     Box(modifier = Modifier.fillMaxSize()) {
-        Column(modifier = Modifier.fillMaxSize()) {
-            Box(modifier = Modifier.weight(1f)) {
-                content()
-            }
+        content()
 
-            if (currentTrack != null && !showFullPlayer) {
+        if (currentTrack != null && !showFullPlayer) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .windowInsetsPadding(
+                        WindowInsets.navigationBars
+                            .only(WindowInsetsSides.Bottom)
+                    )
+                    .padding(bottom = 80.dp)
+                    .zIndex(1f)
+            ) {
                 MiniPlayerBar(
                     track = currentTrack!!,
                     isPlaying = isPlaying,
                     onPlayPauseClicked = { viewModel.togglePlayPause() },
-                    onNextClicked = { viewModel.skipNext() },
                     onPreviousClicked = { viewModel.skipPrevious() },
+                    onNextClicked = { viewModel.skipNext() },
                     onBarClicked = { showFullPlayer = true }
                 )
             }
@@ -65,12 +75,14 @@ fun PlayerScaffold(
                 isPlaying = isPlaying,
                 playbackPosition = position,
                 duration = duration,
+                shuffleMode = shuffleMode,
                 repeatMode = repeatMode,
                 onBack = { showFullPlayer = false },
                 onPlayPauseToggle = { viewModel.togglePlayPause() },
                 onSeekTo = { viewModel.seekTo(it) },
                 onNext = { viewModel.skipNext() },
                 onPrevious = { viewModel.skipPrevious() },
+                onShuffleToggle = { viewModel.toggleCurrentShuffleMode() },
                 onRepeatToggle = { viewModel.toggleCurrentRepeatMode() }
             )
         }

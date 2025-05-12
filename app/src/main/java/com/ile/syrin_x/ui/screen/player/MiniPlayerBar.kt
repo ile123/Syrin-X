@@ -49,7 +49,7 @@ fun MiniPlayerBar(
                 .fillMaxWidth(0.95f),
             tonalElevation = 6.dp,
             shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp, bottomStart = 16.dp, bottomEnd = 16.dp),
-            color = MaterialTheme.colorScheme.surfaceVariant
+            color = MaterialTheme.colorScheme.tertiaryContainer
         ) {
             Row(
                 modifier = Modifier

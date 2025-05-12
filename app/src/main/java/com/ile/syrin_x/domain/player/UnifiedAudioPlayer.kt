@@ -43,6 +43,7 @@ import androidx.media2.common.MediaMetadata.METADATA_KEY_DURATION
 import androidx.media2.common.MediaMetadata.METADATA_KEY_TITLE
 import com.google.android.exoplayer2.ext.mediasession.MediaSessionConnector
 import com.google.android.exoplayer2.ext.mediasession.TimelineQueueNavigator
+import com.ile.syrin_x.data.enums.ShuffleMode
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
@@ -71,6 +72,10 @@ class UnifiedAudioPlayer @Inject constructor(
     private var _currentRepeatMode: MusicPlayerRepeatMode = MusicPlayerRepeatMode.OFF
     val currentRepeatMode: MusicPlayerRepeatMode
         get() = _currentRepeatMode
+
+    private var _currentShuffleMode: ShuffleMode = ShuffleMode.OFF
+    val currentShuffleMode: ShuffleMode
+        get() = _currentShuffleMode
 
     private lateinit var notificationManager: PlayerNotificationManager
     lateinit var currentNotification: Notification

@@ -32,12 +32,15 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.ile.syrin_x.data.enums.MusicPlayerRepeatMode
+import com.ile.syrin_x.data.enums.ShuffleMode
 import com.ile.syrin_x.data.model.UnifiedTrack
 import com.ile.syrin_x.ui.icon.ExpandAllIcon
 import com.ile.syrin_x.ui.icon.PauseIcon
 import com.ile.syrin_x.ui.icon.PlayIcon
 import com.ile.syrin_x.ui.icon.RepeatIcon
 import com.ile.syrin_x.ui.icon.RepeatOnIcon
+import com.ile.syrin_x.ui.icon.ShuffleIcon
+import com.ile.syrin_x.ui.icon.ShuffleOnIcon
 import com.ile.syrin_x.ui.icon.SkipNextIcon
 import com.ile.syrin_x.ui.icon.SkipPreviousIcon
 import com.ile.syrin_x.utils.formatTime
@@ -48,12 +51,14 @@ fun FullPlayerScreen(
     isPlaying: Boolean,
     playbackPosition: Long,
     duration: Long,
+    shuffleMode: ShuffleMode,
     repeatMode: MusicPlayerRepeatMode,
     onBack: () -> Unit,
     onPlayPauseToggle: () -> Unit,
     onSeekTo: (Long) -> Unit,
     onNext: () -> Unit,
     onPrevious: () -> Unit,
+    onShuffleToggle: () -> Unit,
     onRepeatToggle: () -> Unit
 ) {
     val bg = MaterialTheme.colorScheme.background
@@ -194,16 +199,36 @@ fun FullPlayerScreen(
 
             Spacer(Modifier.height(16.dp))
 
-            IconButton(onClick = onRepeatToggle) {
-                Icon(
-                    imageVector = when (repeatMode) {
-                        MusicPlayerRepeatMode.ALL -> RepeatOnIcon
-                        MusicPlayerRepeatMode.OFF -> RepeatIcon
-                    },
-                    contentDescription = "Repeat",
-                    modifier = Modifier.size(32.dp),
-                    tint = MaterialTheme.colorScheme.onBackground
-                )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(32.dp, Alignment.CenterHorizontally),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = onShuffleToggle) {
+                    Icon(
+                        imageVector = when (shuffleMode) {
+                            ShuffleMode.ON -> ShuffleOnIcon
+                            ShuffleMode.OFF -> ShuffleIcon
+                        },
+                        contentDescription = "Shuffle",
+                        modifier = Modifier.size(32.dp),
+                        tint = MaterialTheme.colorScheme.onBackground
+                    )
+                }
+
+                IconButton(onClick = onRepeatToggle) {
+                    Icon(
+                        imageVector = when (repeatMode) {
+                            MusicPlayerRepeatMode.ALL -> RepeatOnIcon
+                            MusicPlayerRepeatMode.OFF -> RepeatIcon
+                        },
+                        contentDescription = "Repeat",
+                        modifier = Modifier.size(32.dp),
+                        tint = MaterialTheme.colorScheme.onBackground
+                    )
+                }
             }
         }
     }

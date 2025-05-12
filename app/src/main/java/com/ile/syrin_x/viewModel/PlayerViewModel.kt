@@ -4,6 +4,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ile.syrin_x.data.enums.MusicPlayerRepeatMode
+import com.ile.syrin_x.data.enums.ShuffleMode
 import com.ile.syrin_x.data.model.UnifiedTrack
 import com.ile.syrin_x.domain.player.UnifiedAudioPlayer
 import com.ile.syrin_x.domain.repository.PreviouslyPlayedTrackRepository
@@ -91,6 +92,14 @@ class PlayerViewModel @Inject constructor(
             MusicPlayerRepeatMode.ALL -> MusicPlayerRepeatMode.OFF
         }
         audioPlayer.setCurrentRepeatMode(next)
+    }
+
+    fun toggleCurrentShuffleMode() {
+        val next = when (audioPlayer.currentShuffleMode) {
+            ShuffleMode.OFF -> ShuffleMode.ON
+            ShuffleMode.ON -> ShuffleMode.OFF
+        }
+        // Add call for UnifiedAudioPlayer here
     }
 
     override fun onCleared() {
