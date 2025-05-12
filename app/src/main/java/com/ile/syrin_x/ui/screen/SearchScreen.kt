@@ -50,6 +50,8 @@ import com.ile.syrin_x.R
 import com.ile.syrin_x.domain.core.Response
 import com.ile.syrin_x.ui.icon.Book_icon
 import com.ile.syrin_x.ui.navigation.NavigationGraph
+import com.ile.syrin_x.ui.screen.common.BottomBarNavigationComponent
+import com.ile.syrin_x.ui.screen.common.HeaderComponent
 import com.ile.syrin_x.ui.screen.common.MyCircularProgress
 import com.ile.syrin_x.viewModel.SearchViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -72,7 +74,13 @@ fun SearchScreen(
 
     Scaffold(
         snackbarHost = { SnackbarHost(hostState = hostState) },
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier.fillMaxSize(),
+        topBar = {
+            HeaderComponent(navHostController)
+        },
+        bottomBar = {
+            BottomBarNavigationComponent(navHostController)
+        }
     ) { paddingValues ->
         Content(
             paddingValues = paddingValues,

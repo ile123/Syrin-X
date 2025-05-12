@@ -53,6 +53,7 @@ fun PlayerScaffold(
                     isPlaying = isPlaying,
                     onPlayPauseClicked = { viewModel.togglePlayPause() },
                     onNextClicked = { viewModel.skipNext() },
+                    onPreviousClicked = { viewModel.skipPrevious() },
                     onBarClicked = { showFullPlayer = true }
                 )
             }

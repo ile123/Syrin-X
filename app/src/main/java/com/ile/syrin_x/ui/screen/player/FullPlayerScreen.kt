@@ -2,6 +2,7 @@ package com.ile.syrin_x.ui.screen.player
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -12,17 +13,23 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import com.ile.syrin_x.data.enums.MusicPlayerRepeatMode
 import com.ile.syrin_x.data.model.UnifiedTrack
@@ -31,7 +38,6 @@ import com.ile.syrin_x.ui.icon.PauseIcon
 import com.ile.syrin_x.ui.icon.PlayIcon
 import com.ile.syrin_x.ui.icon.RepeatIcon
 import com.ile.syrin_x.ui.icon.RepeatOnIcon
-import com.ile.syrin_x.ui.icon.RepeatOnceOnIcon
 import com.ile.syrin_x.ui.icon.SkipNextIcon
 import com.ile.syrin_x.ui.icon.SkipPreviousIcon
 import com.ile.syrin_x.utils.formatTime
@@ -50,76 +56,163 @@ fun FullPlayerScreen(
     onPrevious: () -> Unit,
     onRepeatToggle: () -> Unit
 ) {
-    Column(
+    val bg = MaterialTheme.colorScheme.background
+    val darkerBg = bg.darken(0.1f)
+
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Black)
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+            .background(
+                Brush.verticalGradient(colors = listOf(darkerBg, bg))
+            )
     ) {
-        Row(modifier = Modifier.fillMaxWidth()) {
-            IconButton(onClick = onBack) {
-                Icon(ExpandAllIcon, contentDescription = "Expand All Icon")
-            }
-        }
-
-        AsyncImage(
-            model = track.artworkUrl,
-            contentDescription = null,
+        Column(
             modifier = Modifier
-                .fillMaxWidth(0.8f)
-                .aspectRatio(1f)
-                .clip(RoundedCornerShape(16.dp))
-        )
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        Text(track.title ?: "Unknown", color = Color.White, fontSize = 20.sp)
-        Text(track.artists?.joinToString(", ") ?: "", color = Color.Gray, fontSize = 16.sp)
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Slider(
-            value = playbackPosition.toFloat(),
-            onValueChange = { onSeekTo(it.toLong()) },
-            valueRange = 0f..(duration.coerceAtLeast(1)).toFloat(),
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Row(modifier = Modifier.fillMaxWidth()) {
-            Text(formatTime(playbackPosition), color = Color.LightGray, fontSize = 12.sp)
-            Spacer(Modifier.weight(1f))
-            Text(formatTime(duration), color = Color.LightGray, fontSize = 12.sp)
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly
+                .fillMaxSize()
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            IconButton(onClick = onPrevious) {
-                Icon(SkipPreviousIcon, contentDescription = null, tint = Color.White)
+            Spacer(Modifier.height(32.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Start
+            ) {
+                IconButton(onClick = onBack) {
+                    Icon(
+                        imageVector = ExpandAllIcon,
+                        contentDescription = "Back",
+                        tint = MaterialTheme.colorScheme.onBackground
+                    )
+                }
             }
-            IconButton(onClick = onPlayPauseToggle) {
-                Icon(
-                    imageVector = if (isPlaying) PauseIcon else PlayIcon,
-                    contentDescription = null,
-                    modifier = Modifier.size(64.dp),
-                    tint = Color.White
+
+            Spacer(Modifier.height(16.dp))
+
+            Card(
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                ),
+                shape = RoundedCornerShape(16.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+                modifier = Modifier
+                    .fillMaxWidth(0.8f)
+                    .aspectRatio(1f)
+            ) {
+                AsyncImage(
+                    model = track.artworkUrl,
+                    contentDescription = "Album Art",
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize()
                 )
             }
-            IconButton(onClick = onNext) {
-                Icon(SkipNextIcon, contentDescription = null, tint = Color.White)
-            }
-        }
 
-        IconButton(onClick = onRepeatToggle) {
-            val icon = when (repeatMode) {
-                MusicPlayerRepeatMode.OFF -> RepeatIcon
-                MusicPlayerRepeatMode.ALL -> RepeatOnIcon
+            Spacer(Modifier.height(24.dp))
+
+            Text(
+                text = track.title.orEmpty(),
+                style = MaterialTheme.typography.headlineSmall,
+                color = MaterialTheme.colorScheme.onBackground,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                text = track.artists?.joinToString(", ").orEmpty(),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+
+            Spacer(Modifier.height(24.dp))
+
+            Slider(
+                value = playbackPosition.toFloat(),
+                onValueChange = { onSeekTo(it.toLong()) },
+                valueRange = 0f..(duration.coerceAtLeast(1)).toFloat(),
+                modifier = Modifier.fillMaxWidth(),
+                colors = SliderDefaults.colors(
+                    thumbColor = MaterialTheme.colorScheme.primary,
+                    activeTrackColor = MaterialTheme.colorScheme.primary
+                )
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    formatTime(playbackPosition),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
+                )
+                Text(
+                    formatTime(duration),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
+                )
             }
-            Icon(icon, contentDescription = null, tint = Color.White)
+
+            Spacer(Modifier.height(24.dp))
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(32.dp, Alignment.CenterHorizontally),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = onPrevious) {
+                    Icon(
+                        imageVector = SkipPreviousIcon,
+                        contentDescription = "Previous",
+                        modifier = Modifier.size(48.dp),
+                        tint = MaterialTheme.colorScheme.onBackground
+                    )
+                }
+
+                IconButton(
+                    onClick = onPlayPauseToggle,
+                    modifier = Modifier.size(80.dp)
+                ) {
+                    Icon(
+                        imageVector = if (isPlaying) PauseIcon else PlayIcon,
+                        contentDescription = "Play/Pause",
+                        modifier = Modifier.fillMaxSize(),
+                        tint = MaterialTheme.colorScheme.onBackground
+                    )
+                }
+
+                IconButton(onClick = onNext) {
+                    Icon(
+                        imageVector = SkipNextIcon,
+                        contentDescription = "Next",
+                        modifier = Modifier.size(48.dp),
+                        tint = MaterialTheme.colorScheme.onBackground
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(16.dp))
+
+            IconButton(onClick = onRepeatToggle) {
+                Icon(
+                    imageVector = when (repeatMode) {
+                        MusicPlayerRepeatMode.ALL -> RepeatOnIcon
+                        MusicPlayerRepeatMode.OFF -> RepeatIcon
+                    },
+                    contentDescription = "Repeat",
+                    modifier = Modifier.size(32.dp),
+                    tint = MaterialTheme.colorScheme.onBackground
+                )
+            }
         }
     }
 }
+
+fun Color.darken(fraction: Float): Color =
+    Color(
+        red = red * (1f - fraction),
+        green = green * (1f - fraction),
+        blue = blue * (1f - fraction),
+        alpha = alpha
+    )

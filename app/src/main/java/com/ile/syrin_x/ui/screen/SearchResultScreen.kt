@@ -23,10 +23,13 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Tab
@@ -50,6 +53,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
@@ -63,6 +67,8 @@ import com.ile.syrin_x.data.model.UnifiedUser
 import com.ile.syrin_x.data.model.spotify.SpotifyAlbum
 import com.ile.syrin_x.domain.core.Response
 import com.ile.syrin_x.ui.navigation.NavigationGraph
+import com.ile.syrin_x.ui.screen.common.BottomBarNavigationComponent
+import com.ile.syrin_x.ui.screen.common.HeaderComponent
 import com.ile.syrin_x.ui.screen.common.MyCircularProgress
 import com.ile.syrin_x.utils.formatDuration
 import com.ile.syrin_x.viewModel.SearchViewModel
@@ -79,7 +85,7 @@ fun SearchResultScreen(
     val hostState = remember { SnackbarHostState() }
 
     fun searchByMusicCategory(musicCategory: MusicCategory) {
-        when(musicCategory) {
+        when (musicCategory) {
             MusicCategory.TRACKS -> searchViewModel.fetchMoreTracksForInfiniteScroll()
             MusicCategory.PLAYLISTS -> searchViewModel.fetchMorePlaylistsForInfiniteScroll()
             MusicCategory.ALBUMS -> searchViewModel.fetchMoreAlbumsForInfiniteScroll()
@@ -93,7 +99,13 @@ fun SearchResultScreen(
 
     Scaffold(
         snackbarHost = { SnackbarHost(hostState = hostState) },
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier.fillMaxSize(),
+        topBar = {
+            HeaderComponent(navHostController)
+        },
+        bottomBar = {
+            BottomBarNavigationComponent(navHostController)
+        }
     ) { paddingValues ->
         Image(
             painter = painterResource(id = R.drawable.background_image_1),
@@ -106,7 +118,7 @@ fun SearchResultScreen(
             paddingValues = paddingValues,
             searchFlowState = searchViewModel.searchFlow,
             onEndOfListHit = { musicCategory -> searchByMusicCategory(musicCategory) },
-            searchSuccess = {  },
+            searchSuccess = { },
             searchError = { errorMessage ->
                 scope.launch {
                     hostState.showSnackbar(errorMessage)
@@ -187,23 +199,43 @@ fun Content(
         when (selectedCategory) {
             MusicCategory.TRACKS -> {
                 LazyColumn(state = tracksLazyListState) {
-                    items(searchViewModel.searchedTracks, key = { item -> "${item.id}-${MusicCategory.TRACKS}" }) { track ->
-                        UnifiedTrackRow(track = track, searchViewModel.searchedMusicSource, navHostController)
+                    items(
+                        searchViewModel.searchedTracks,
+                        key = { item -> "${item.id}-${MusicCategory.TRACKS}" }) { track ->
+                        UnifiedTrackRow(
+                            track = track,
+                            searchViewModel.searchedMusicSource,
+                            navHostController
+                        )
                     }
                 }
             }
+
             MusicCategory.PLAYLISTS -> {
                 LazyColumn(state = playlistsLazyListState) {
-                    items(searchViewModel.searchedPlaylists, key = { item -> "${item.id}-${MusicCategory.PLAYLISTS}" }) { playlist ->
-                        UnifiedPlaylistRow(playlist = playlist, searchViewModel.searchedMusicSource, navHostController)
+                    items(
+                        searchViewModel.searchedPlaylists,
+                        key = { item -> "${item.id}-${MusicCategory.PLAYLISTS}" }) { playlist ->
+                        UnifiedPlaylistRow(
+                            playlist = playlist,
+                            searchViewModel.searchedMusicSource,
+                            navHostController
+                        )
                     }
                 }
             }
+
             MusicCategory.ALBUMS -> {
                 if (searchViewModel.searchedMusicSource == MusicSource.SPOTIFY) {
                     LazyColumn(state = albumsLazyListState) {
-                        items(searchViewModel.searchedAlbums, key = { item -> "${item.id}-${MusicCategory.ALBUMS}" }) { album ->
-                            UnifiedAlbumRow(album = album, searchViewModel.searchedMusicSource, navHostController)
+                        items(
+                            searchViewModel.searchedAlbums,
+                            key = { item -> "${item.id}-${MusicCategory.ALBUMS}" }) { album ->
+                            UnifiedAlbumRow(
+                                album = album,
+                                searchViewModel.searchedMusicSource,
+                                navHostController
+                            )
                         }
                     }
                 } else {
@@ -218,10 +250,18 @@ fun Content(
                     }
                 }
             }
+
             MusicCategory.USERS -> {
                 LazyColumn(state = usersLazyListState) {
-                    items(searchViewModel.searchedUsers, key = { item -> "${item.id}-${MusicCategory.USERS}" }) { user ->
-                        UnifiedUserRow(user = user, searchViewModel.searchedMusicSource, navHostController, searchViewModel)
+                    items(
+                        searchViewModel.searchedUsers,
+                        key = { item -> "${item.id}-${MusicCategory.USERS}" }) { user ->
+                        UnifiedUserRow(
+                            user = user,
+                            searchViewModel.searchedMusicSource,
+                            navHostController,
+                            searchViewModel
+                        )
                     }
                 }
             }
@@ -251,11 +291,13 @@ fun SearchResultState(
                     Log.i("Search state", "Loading")
                     isLoading.value = true
                 }
+
                 is Response.Error -> {
                     Log.e("Search state", it.message)
                     isLoading.value = false
                     onError(it.message)
                 }
+
                 is Response.Success -> {
                     Log.i("Search state", "Success")
                     isLoading.value = false
@@ -273,45 +315,58 @@ fun UnifiedTrackRow(
     navHostController: NavHostController,
     modifier: Modifier = Modifier,
 ) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
+    Card(
         modifier = modifier
             .fillMaxWidth()
-            .clickable(onClick = { navHostController.navigate("track_details_screen/${track.id}/${musicSource.name}") })
-            .padding(8.dp)
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        shape = RoundedCornerShape(12.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
     ) {
-        AsyncImage(
-            model = track.artworkUrl,
-            contentDescription = "${track.title} artwork",
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
-                .size(56.dp)
-                .clip(RoundedCornerShape(4.dp))
-        )
-        Spacer(modifier = Modifier.width(12.dp))
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = track.title ?: "Unknown Title",
-                maxLines = 1,
-                style = MaterialTheme.typography.labelMedium
+                .fillMaxWidth()
+                .clickable { navHostController.navigate("track_details_screen/${track.id}/${musicSource.name}") }
+                .padding(16.dp)
+        ) {
+            AsyncImage(
+                model = track.artworkUrl,
+                contentDescription = "${track.title} artwork",
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .size(64.dp)
+                    .clip(RoundedCornerShape(8.dp))
             )
-            val subtitle = when {
-                !track.albumName.isNullOrEmpty() -> track.albumName
-                !track.artists.isNullOrEmpty() -> track.artists.joinToString(", ")
-                else -> "Unknown Artist"
+            Spacer(modifier = Modifier.width(16.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = track.title ?: "Unknown Title",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                val subtitle = when {
+                    !track.albumName.isNullOrEmpty() -> track.albumName
+                    !track.artists.isNullOrEmpty() -> track.artists.joinToString(", ")
+                    else -> "Unknown Artist"
+                }
+                Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
             }
-            Text(
-                text = subtitle,
-                maxLines = 1,
-                style = MaterialTheme.typography.bodyMedium,
-                color = Color.Gray
-            )
-        }
-        track.durationMs?.let { duration ->
-            Text(
-                text = formatDuration(duration),
-                style = MaterialTheme.typography.displaySmall,
-                color = Color.Gray
-            )
+            track.durationMs?.let { duration ->
+                Text(
+                    text = formatDuration(duration),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         }
     }
 }
@@ -323,32 +378,47 @@ fun UnifiedAlbumRow(
     navHostController: NavHostController,
     modifier: Modifier = Modifier
 ) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
+    Card(
         modifier = modifier
             .fillMaxWidth()
-            .clickable(onClick = { navHostController.navigate("album_details_screen/${album.id}/${musicSource.name}") })
-            .padding(8.dp)
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        shape = RoundedCornerShape(12.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
     ) {
-        val imageUrl = album.images?.firstOrNull()?.url
-        AsyncImage(
-            model = imageUrl,
-            contentDescription = "${album.name} album artwork",
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
-                .size(64.dp)
-                .clip(RoundedCornerShape(4.dp))
-        )
-        Spacer(modifier = Modifier.width(12.dp))
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = album.name ?: "Unknown Album",
-                style = MaterialTheme.typography.labelMedium
+                .fillMaxWidth()
+                .clickable { navHostController.navigate("album_details_screen/${album.id}/${musicSource.name}") }
+                .padding(16.dp)
+        ) {
+            val imageUrl = album.images?.firstOrNull()?.url
+            AsyncImage(
+                model = imageUrl,
+                contentDescription = "${album.name} album artwork",
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .size(64.dp)
+                    .clip(RoundedCornerShape(8.dp))
             )
-            Text(
-                text = album.artists?.get(0)?.name ?: "Unknown Artist",
-                style = MaterialTheme.typography.bodyMedium,
-                color = Color.Magenta
-            )
+            Spacer(modifier = Modifier.width(16.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = album.name ?: "Unknown Album",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = album.artists?.firstOrNull()?.name ?: "Unknown Artist",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
         }
     }
 }
@@ -360,35 +430,48 @@ fun UnifiedPlaylistRow(
     navHostController: NavHostController,
     modifier: Modifier = Modifier
 ) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
+    Card(
         modifier = modifier
             .fillMaxWidth()
-            .clickable(onClick = { navHostController.navigate("playlist_details_screen/${playlist.id}/${musicSource.name}") })
-            .padding(8.dp)
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        shape = RoundedCornerShape(12.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
     ) {
-        val imageUrl = playlist.images?.firstOrNull()?.url
-        AsyncImage(
-            model = imageUrl,
-            contentDescription = "${playlist.name} playlist image",
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
-                .size(56.dp)
-                .clip(RoundedCornerShape(4.dp))
-        )
-        Spacer(modifier = Modifier.width(12.dp))
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = playlist.name ?: "Unknown Playlist",
-                maxLines = 1,
-                style = MaterialTheme.typography.bodyMedium
+                .fillMaxWidth()
+                .clickable { navHostController.navigate("playlist_details_screen/${playlist.id}/${musicSource.name}") }
+                .padding(16.dp)
+        ) {
+            val imageUrl = playlist.images?.firstOrNull()?.url
+            AsyncImage(
+                model = imageUrl,
+                contentDescription = "${playlist.name} playlist image",
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .size(64.dp)
+                    .clip(RoundedCornerShape(8.dp))
             )
-            if (!playlist.description.isNullOrEmpty()) {
+            Spacer(modifier = Modifier.width(16.dp))
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = playlist.description,
+                    text = playlist.name ?: "Unknown Playlist",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = Color.Gray
+                    overflow = TextOverflow.Ellipsis
                 )
+                if (!playlist.description.isNullOrEmpty()) {
+                    Text(
+                        text = playlist.description,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
             }
         }
     }
@@ -404,58 +487,60 @@ fun UnifiedUserRow(
 ) {
     val isFavorited = searchViewModel.favoriteArtists.any { it.id == user.id }
 
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
+    Card(
         modifier = modifier
             .fillMaxWidth()
-            .padding(8.dp)
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        shape = RoundedCornerShape(12.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
     ) {
-        // Avatar
-        AsyncImage(
-            model = user.avatarUrl,
-            contentDescription = "${user.name ?: "User"} avatar",
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
-                .size(48.dp)
-                .clip(CircleShape)
-        )
-
-        Spacer(Modifier.width(12.dp))
-
-        Column(
-            modifier = Modifier
-                .weight(1f)
-                .clickable {
-                    navHostController.navigate("user_details_screen/${user.id}/${musicSource.name}")
-                }
+                .fillMaxWidth()
+                .padding(16.dp)
         ) {
-            Text(
-                text = user.name.orEmpty(),
-                style = MaterialTheme.typography.labelSmall
+            AsyncImage(
+                model = user.avatarUrl,
+                contentDescription = "${user.name.orEmpty()} avatar",
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(CircleShape)
             )
-            user.type?.let { type ->
+            Spacer(Modifier.width(16.dp))
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+            ) {
                 Text(
-                    text = type.replaceFirstChar { it.uppercase() },
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                    text = user.name.orEmpty(),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                user.type?.let { type ->
+                    Text(
+                        text = type.replaceFirstChar { it.uppercase() },
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
+            IconButton(onClick = { searchViewModel.toggleArtistFavorite(user) }) {
+                Icon(
+                    imageVector = Icons.Default.Favorite,
+                    contentDescription = if (isFavorited) "Remove from favorites" else "Add to favorites",
+                    tint = if (isFavorited) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }
-
-        IconButton(onClick = {
-            searchViewModel.toggleArtistFavorite(user)
-        }) {
-            Icon(
-                imageVector = Icons.Default.Favorite,
-                contentDescription = if (isFavorited) "Remove from favorites" else "Add to favorites",
-                tint = if (isFavorited)
-                    MaterialTheme.colorScheme.error
-                else
-                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
-            )
-        }
     }
 }
-
 
 @Composable
 fun MusicCategoryTabs(
@@ -464,18 +549,20 @@ fun MusicCategoryTabs(
     onCategorySelected: (MusicCategory) -> Unit
 ) {
     val categories = when (musicSource) {
-        MusicSource.SPOTIFY -> listOfNotNull(
+        MusicSource.SPOTIFY -> listOf(
             MusicCategory.TRACKS,
             MusicCategory.PLAYLISTS,
             MusicCategory.ALBUMS,
             MusicCategory.USERS
         )
-        MusicSource.SOUNDCLOUD -> listOfNotNull(
+
+        MusicSource.SOUNDCLOUD -> listOf(
             MusicCategory.TRACKS,
             MusicCategory.PLAYLISTS,
             MusicCategory.USERS
         )
-        MusicSource.NOT_SPECIFIED -> emptyList()
+
+        else -> emptyList()
     }
 
     if (categories.isEmpty()) {
@@ -488,48 +575,50 @@ fun MusicCategoryTabs(
             Text("No categories available", style = MaterialTheme.typography.bodyMedium)
         }
     } else {
-        val selectedIndex = categories.indexOf(selectedCategory).let { if (it >= 0) it else 0 }
+        val selectedIndex = categories.indexOf(selectedCategory).coerceAtLeast(0)
 
-        TabRow(
+        ScrollableTabRow(
             selectedTabIndex = selectedIndex,
+            edgePadding = 24.dp,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(48.dp),
-            contentColor = MaterialTheme.colorScheme.onPrimary,
+                .height(56.dp),
+            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+            contentColor = MaterialTheme.colorScheme.onSurface,
             indicator = { tabPositions ->
-                TabRowDefaults
-                    .Indicator(
+                TabRowDefaults.Indicator(
                     Modifier
                         .tabIndicatorOffset(tabPositions[selectedIndex])
+                        .padding(horizontal = 16.dp)
+                        .height(3.dp)
                         .background(MaterialTheme.colorScheme.primary)
                 )
             }
         ) {
             categories.forEachIndexed { index, category ->
                 Tab(
-                    selected = category == selectedCategory,
+                    selected = index == selectedIndex,
                     onClick = { onCategorySelected(category) },
+                    modifier = Modifier
+                        .padding(horizontal = 12.dp)
+                        .height(56.dp),
                     text = {
                         Text(
                             text = category.displayName,
-                            style = if (category == selectedCategory) {
-                                MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
-                            } else {
-                                MaterialTheme.typography.bodyMedium
-                            },
-                            color = if (category == selectedCategory) {
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            style = if (index == selectedIndex)
+                                MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                            else
+                                MaterialTheme.typography.bodyMedium,
+                            color = if (index == selectedIndex)
                                 MaterialTheme.colorScheme.primary
-                            } else {
+                            else
                                 MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                            }
                         )
-                    },
-                    modifier = Modifier
-                        .padding(horizontal = 16.dp)
-                        .animateContentSize()
+                    }
                 )
             }
         }
     }
 }
-

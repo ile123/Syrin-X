@@ -58,7 +58,7 @@ class MainActivity : ComponentActivity() {
             val appTheme by produceState(initialValue = defaultTheme, key1 = datastoreRepository) {
                 val storedName = datastoreRepository.getString("app_theme")
                 value = storedName
-                    ?.let { name -> AppTheme.values().find { it.name == name } }
+                    ?.let { name -> AppTheme.entries.find { it.name == name } }
                     ?: defaultTheme
             }
 
