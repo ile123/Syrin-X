@@ -30,10 +30,14 @@ class PlayerViewModel @Inject constructor(
     val currentTrack = MutableStateFlow<UnifiedTrack?>(null)
 
     private val trackList = mutableListOf<UnifiedTrack>()
+    private val originalTrackList = mutableListOf<UnifiedTrack>()
     private var currentIndex = 0
 
     private val _uiEvent = MutableSharedFlow<PlayerUiEvent>()
     val uiEvent = _uiEvent.asSharedFlow()
+
+    private val _shuffleMode = MutableStateFlow(ShuffleMode.OFF)
+    val shuffleMode: StateFlow<ShuffleMode> = _shuffleMode
 
     sealed class PlayerUiEvent {
         data object ExpandPlayer : PlayerUiEvent()
@@ -94,12 +98,21 @@ class PlayerViewModel @Inject constructor(
         audioPlayer.setCurrentRepeatMode(next)
     }
 
-    fun toggleCurrentShuffleMode() {
-        val next = when (audioPlayer.currentShuffleMode) {
-            ShuffleMode.OFF -> ShuffleMode.ON
-            ShuffleMode.ON -> ShuffleMode.OFF
+    fun toggleShuffleMode() {
+        val next = if (_shuffleMode.value == ShuffleMode.OFF) ShuffleMode.ON else ShuffleMode.OFF
+        _shuffleMode.value = next
+
+        if (next == ShuffleMode.ON) {
+            originalTrackList.clear()
+            originalTrackList.addAll(trackList)
+            trackList.shuffle()
+            currentIndex = trackList.indexOf(currentTrack.value)
+        } else {
+            trackList.clear()
+            trackList.addAll(originalTrackList)
+            currentIndex = trackList.indexOf(currentTrack.value)
+            originalTrackList.clear()
         }
-        // Add call for UnifiedAudioPlayer here
     }
 
     override fun onCleared() {

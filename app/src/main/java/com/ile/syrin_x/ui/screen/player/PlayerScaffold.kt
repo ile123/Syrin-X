@@ -20,6 +20,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ile.syrin_x.viewModel.PlayerViewModel
 
 @Composable
@@ -32,7 +33,7 @@ fun PlayerScaffold(
     val duration by viewModel.duration.collectAsState()
     val position by viewModel.playbackPosition.collectAsState()
     val repeatMode = viewModel.audioPlayer.currentRepeatMode
-    val shuffleMode = viewModel.audioPlayer.currentShuffleMode
+    val shuffleMode by viewModel.shuffleMode.collectAsStateWithLifecycle()
 
     var showFullPlayer by remember { mutableStateOf(false) }
 
@@ -82,7 +83,7 @@ fun PlayerScaffold(
                 onSeekTo = { viewModel.seekTo(it) },
                 onNext = { viewModel.skipNext() },
                 onPrevious = { viewModel.skipPrevious() },
-                onShuffleToggle = { viewModel.toggleCurrentShuffleMode() },
+                onShuffleToggle = { viewModel.toggleShuffleMode() },
                 onRepeatToggle = { viewModel.toggleCurrentRepeatMode() }
             )
         }

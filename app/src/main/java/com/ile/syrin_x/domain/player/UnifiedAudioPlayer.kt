@@ -330,7 +330,7 @@ class UnifiedAudioPlayer @Inject constructor(
                         _onTrackEnded.tryEmit(Unit)
                     }
                 }
-                else -> { /* do nothing */ }
+                else -> { }
             }
         }
 
@@ -378,7 +378,7 @@ class UnifiedAudioPlayer @Inject constructor(
                         Log.e("UnifiedAudioPlayer", "Spotify polling failed", e)
                     }
                 }
-                delay(1_000L)
+                delay(1000L)
             }
         }
     }
