@@ -9,10 +9,11 @@ import com.ile.syrin_x.domain.repository.DataStoreRepository
 import kotlinx.coroutines.flow.first
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
 private const val PREFERENCES_NAME = "my_preferences"
-
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = PREFERENCES_NAME)
 
 class DataStoreRepositoryImpl @Inject constructor(
@@ -21,27 +22,34 @@ class DataStoreRepositoryImpl @Inject constructor(
 
     override suspend fun putString(key: String, value: String) {
         val preferencesKey = stringPreferencesKey(key)
-        context.dataStore.edit { preferences ->
-            preferences[preferencesKey] = value
+        context.dataStore.edit { prefs ->
+            prefs[preferencesKey] = value
         }
     }
 
     override suspend fun putInt(key: String, value: Int) {
         val preferencesKey = intPreferencesKey(key)
-        context.dataStore.edit { preferences ->
-            preferences[preferencesKey] = value
+        context.dataStore.edit { prefs ->
+            prefs[preferencesKey] = value
         }
     }
 
     override suspend fun getString(key: String): String? {
         val preferencesKey = stringPreferencesKey(key)
-        val preferences = context.dataStore.data.first()
-        return preferences[preferencesKey]
+        val prefs = context.dataStore.data.first()
+        return prefs[preferencesKey]
     }
 
     override suspend fun getInt(key: String): Int? {
         val preferencesKey = intPreferencesKey(key)
-        val preferences = context.dataStore.data.first()
-        return preferences[preferencesKey]
+        val prefs = context.dataStore.data.first()
+        return prefs[preferencesKey]
+    }
+
+    override fun getStringFlow(key: String): Flow<String?> {
+        val preferencesKey = stringPreferencesKey(key)
+        return context.dataStore.data.map { prefs ->
+            prefs[preferencesKey]
+        }
     }
 }

@@ -1,7 +1,6 @@
 package com.ile.syrin_x.ui.screen
 
 import android.util.Log
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -12,7 +11,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -29,7 +27,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -39,14 +36,11 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
-import com.ile.syrin_x.R
 import com.ile.syrin_x.domain.core.Response
 import com.ile.syrin_x.ui.icon.Book_icon
 import com.ile.syrin_x.ui.navigation.NavigationGraph
@@ -109,7 +103,6 @@ fun Content(
     val keywordText = remember { mutableStateOf("") }
     val musicSourceSelect = remember { mutableStateOf(GlobalContext.loggedInMusicSources.first()) }
     var showSearchInvalidDialog by remember { mutableStateOf(false) }
-    val scope = rememberCoroutineScope()
 
     val search = {
         if (keywordText.value.isBlank()) {
@@ -144,49 +137,60 @@ fun Content(
             )
         }
 
-        Card(
-            modifier = Modifier
-                .align(Alignment.Center)
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp),
-            shape = RoundedCornerShape(12.dp),
-            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
-        ) {
-            Column(
+        if(GlobalContext.loggedInMusicSources.size > 0) {
+            Card(
                 modifier = Modifier
+                    .align(Alignment.Center)
                     .fillMaxWidth()
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                    .padding(horizontal = 16.dp),
+                shape = RoundedCornerShape(12.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
             ) {
-                OutlinedTextField(
-                    value = keywordText.value,
-                    onValueChange = { keywordText.value = it },
-                    label = { Text("Keyword") },
-                    placeholder = { Text("Type to search…") },
-                    singleLine = true,
-                    leadingIcon = { Icon(Book_icon, contentDescription = null) },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(8.dp)
-                )
-
-                MusicSourceDropdownMenu(
-                    selectedOption = musicSourceSelect.value,
-                    onSelect = {
-                        musicSourceSelect.value = it
-                        onMusicSourceChange()
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                Button(
-                    onClick = search,
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(48.dp),
-                    shape = RoundedCornerShape(8.dp)
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Text("Search")
+                    OutlinedTextField(
+                        value = keywordText.value,
+                        onValueChange = { keywordText.value = it },
+                        label = { Text("Keyword") },
+                        placeholder = { Text("Type to search…") },
+                        singleLine = true,
+                        leadingIcon = { Icon(Book_icon, contentDescription = null) },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(8.dp)
+                    )
+
+                    MusicSourceDropdownMenu(
+                        selectedOption = musicSourceSelect.value,
+                        onSelect = {
+                            musicSourceSelect.value = it
+                            onMusicSourceChange()
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Button(
+                        onClick = search,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Text("Search")
+                    }
                 }
+            }
+        } else {
+            Column(
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .padding(top = 24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text("Please login to any music source first.")
             }
         }
 

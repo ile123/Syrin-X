@@ -23,14 +23,16 @@ fun MyAlertDialog(
             Text(
                 text = title,
                 style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.SemiBold
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.primary
             )
         },
         text = {
             Text(
                 text = text,
                 style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Normal
+                fontWeight = FontWeight.Normal,
+                color = MaterialTheme.colorScheme.primary
             )
         },
         onDismissRequest = { onDismissRequest() },
@@ -41,7 +43,8 @@ fun MyAlertDialog(
                 Text(
                     confirmButtonText,
                     style = MaterialTheme.typography.labelLarge,
-                    fontWeight = FontWeight.Thin
+                    fontWeight = FontWeight.Thin,
+                    color = MaterialTheme.colorScheme.primary
                 )
             }
         },
@@ -52,10 +55,12 @@ fun MyAlertDialog(
                 Text(
                     dismissButtonText,
                     style = MaterialTheme.typography.labelLarge,
-                    fontWeight = FontWeight.Thin
+                    fontWeight = FontWeight.Thin,
+                    color = MaterialTheme.colorScheme.primary
                 )
             }
         },
+        containerColor = MaterialTheme.colorScheme.primaryContainer,
         properties = DialogProperties(
             dismissOnBackPress = cancelable,
             dismissOnClickOutside = cancelable,

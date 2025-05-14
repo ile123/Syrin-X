@@ -5,11 +5,14 @@ import android.util.Log
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ile.syrin_x.data.model.entity.SoundCloudUserToken
 import com.ile.syrin_x.data.model.entity.SpotifyUserToken
 import com.ile.syrin_x.domain.usecase.auth.GetUserUidUseCase
+import com.ile.syrin_x.domain.usecase.musicsource.soundcloud.DeleteSoundCloudUserTokenUseCase
 import com.ile.syrin_x.domain.usecase.musicsource.soundcloud.ExchangeSoundCloudCodeForTokenUseCase
 import com.ile.syrin_x.domain.usecase.musicsource.soundcloud.GetSoundCloudUserTokenUseCase
+import com.ile.syrin_x.domain.usecase.musicsource.spotify.DeleteSpotifyUserTokenUseCase
 import com.ile.syrin_x.domain.usecase.musicsource.spotify.ExchangeSpotifyCodeForTokenUseCase
 import com.ile.syrin_x.domain.usecase.musicsource.spotify.GetSpotifyUserTokenUseCase
 import com.ile.syrin_x.utils.EnvLoader
@@ -25,7 +28,9 @@ class MusicSourceViewModel @Inject constructor(
     private val exchangeSpotifyCodeForTokenUseCase: ExchangeSpotifyCodeForTokenUseCase,
     private val exchangeSoundCloudCodeForTokenUseCase: ExchangeSoundCloudCodeForTokenUseCase,
     private val spotifyGetUserTokenUseCase: GetSpotifyUserTokenUseCase,
-    private val getSoundCloudUserTokenUseCase: GetSoundCloudUserTokenUseCase
+    private val getSoundCloudUserTokenUseCase: GetSoundCloudUserTokenUseCase,
+    private val deleteSoundCloudUserTokenUseCase: DeleteSoundCloudUserTokenUseCase,
+    private val deleteSpotifyUserTokenUseCase: DeleteSpotifyUserTokenUseCase
 
 ): ViewModel() {
 
@@ -91,6 +96,18 @@ class MusicSourceViewModel @Inject constructor(
                     }
                 }
             }
+        }
+    }
+
+    fun deleteSpotifyToken() = viewModelScope.launch {
+        getUserUidUseCase.invoke().collect { userUuid ->
+            deleteSpotifyUserTokenUseCase(userUuid)
+        }
+    }
+
+    fun deleteSoundCloudToken() = viewModelScope.launch {
+        getUserUidUseCase.invoke().collect { userUuid ->
+            deleteSoundCloudUserTokenUseCase(userUuid)
         }
     }
 

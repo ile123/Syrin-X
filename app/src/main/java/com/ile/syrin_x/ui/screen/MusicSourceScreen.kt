@@ -34,6 +34,7 @@ import com.ile.syrin_x.utils.getSpotifyAuthorizationUrl
 import com.ile.syrin_x.utils.getSoundCloudAuthorizationUrl
 import androidx.core.net.toUri
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavHostController
 import com.ile.syrin_x.R
 import com.ile.syrin_x.utils.EnvLoader
 import com.ile.syrin_x.viewModel.MusicSourceViewModel
@@ -41,6 +42,7 @@ import com.ile.syrin_x.viewModel.MusicSourceViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MusicSourceScreen(
+    navHostController: NavHostController,
     musicSourceViewModel: MusicSourceViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
@@ -85,55 +87,81 @@ fun MusicSourceScreen(
                 )
 
                 when (item.id) {
-                    0 -> SpotifyLoginButton(
-                        enabled = spotifyUserToken == null,
-                        onClick = {
-                            val url = getSpotifyAuthorizationUrl(
-                                EnvLoader.spotifyClientId,
-                                "syrinx://app/spotify",
-                                listOf(
-                                    "user-read-private",
-                                    "user-read-email",
-                                    "user-modify-playback-state",
-                                    "user-read-playback-state",
-                                    "streaming"
+                    0 -> if(spotifyUserToken == null) {
+                        SpotifyLoginButton(
+                            enabled = true,
+                            onClick = {
+                                val url = getSpotifyAuthorizationUrl(
+                                    EnvLoader.spotifyClientId,
+                                    "syrinx://app/spotify",
+                                    listOf(
+                                        "user-read-private",
+                                        "user-read-email",
+                                        "user-modify-playback-state",
+                                        "user-read-playback-state",
+                                        "streaming"
+                                    )
                                 )
-                            )
-                            context.startActivity(
-                                Intent(Intent.ACTION_VIEW, url.toUri())
-                                    .apply {
-                                        addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY)
-                                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                                        addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK)
-                                    }
-                            )
-                        },
-                        modifier = Modifier
-                            .align(Alignment.BottomCenter)
-                            .padding(bottom = 32.dp)
-                    )
+                                context.startActivity(
+                                    Intent(Intent.ACTION_VIEW, url.toUri())
+                                        .apply {
+                                            addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY)
+                                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                            addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK)
+                                        }
+                                )
+                            },
+                            modifier = Modifier
+                                .align(Alignment.BottomCenter)
+                                .padding(bottom = 32.dp)
+                        )
+                    } else {
+                        SpotifyLoginButton(
+                            enabled = false,
+                            onClick = {
+                                musicSourceViewModel.deleteSpotifyToken()
+                                navHostController.popBackStack()
+                            },
+                            modifier = Modifier
+                                .align(Alignment.BottomCenter)
+                                .padding(bottom = 32.dp)
+                        )
+                    }
 
-                    1 -> SoundCloudLoginButton(
-                        enabled = soundCloudUserToken == null,
-                        onClick = {
-                            val url = getSoundCloudAuthorizationUrl(
-                                EnvLoader.soundCloudClientId,
-                                "syrinx://app",
-                                listOf("non-expiring")
-                            )
-                            context.startActivity(
-                                Intent(Intent.ACTION_VIEW, url.toUri())
-                                    .apply {
-                                        addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY)
-                                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                                        addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK)
-                                    }
-                            )
-                        },
-                        modifier = Modifier
-                            .align(Alignment.BottomCenter)
-                            .padding(bottom = 32.dp)
-                    )
+                    1 -> if(soundCloudUserToken == null) {
+                        SoundCloudLoginButton(
+                            enabled = true,
+                            onClick = {
+                                val url = getSoundCloudAuthorizationUrl(
+                                    EnvLoader.soundCloudClientId,
+                                    "syrinx://app",
+                                    listOf("non-expiring")
+                                )
+                                context.startActivity(
+                                    Intent(Intent.ACTION_VIEW, url.toUri())
+                                        .apply {
+                                            addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY)
+                                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                            addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK)
+                                        }
+                                )
+                            },
+                            modifier = Modifier
+                                .align(Alignment.BottomCenter)
+                                .padding(bottom = 32.dp)
+                        )
+                    } else {
+                        SoundCloudLoginButton(
+                            enabled = false,
+                            onClick = {
+                                musicSourceViewModel.deleteSoundCloudToken()
+                                navHostController.popBackStack()
+                            },
+                            modifier = Modifier
+                                .align(Alignment.BottomCenter)
+                                .padding(bottom = 32.dp)
+                        )
+                    }
                 }
             }
         }
@@ -147,19 +175,20 @@ private fun SpotifyLoginButton(
     modifier: Modifier = Modifier
 ) {
 
+    val buttonText = if(enabled) "Login with Spotify" else "Logout from Spotify"
+
     val containerColor = when (enabled) {
         true -> MaterialTheme.colorScheme.primary
-        false -> MaterialTheme.colorScheme.outline
+        false -> MaterialTheme.colorScheme.errorContainer
     }
 
     val contentColor = when (enabled) {
         true -> MaterialTheme.colorScheme.onPrimary
-        false -> MaterialTheme.colorScheme.outlineVariant
+        false -> MaterialTheme.colorScheme.error
     }
 
     Button(
         onClick = onClick,
-        enabled = enabled,
         modifier = modifier,
         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
         colors = ButtonDefaults.buttonColors(
@@ -168,7 +197,7 @@ private fun SpotifyLoginButton(
         ),
     ) {
         Text(
-            "Login with Spotify",
+            buttonText,
             style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.onSurface
         )
@@ -182,19 +211,20 @@ private fun SoundCloudLoginButton(
     modifier: Modifier = Modifier
 ) {
 
+    val buttonText = if(enabled) "Login with Soundcloud" else "Logout from Soundcloud"
+
     val containerColor = when (enabled) {
         true -> MaterialTheme.colorScheme.primary
-        false -> MaterialTheme.colorScheme.outline
+        false -> MaterialTheme.colorScheme.errorContainer
     }
 
     val contentColor = when (enabled) {
         true -> MaterialTheme.colorScheme.onPrimary
-        false -> MaterialTheme.colorScheme.outlineVariant
+        false -> MaterialTheme.colorScheme.error
     }
 
     Button(
         onClick = onClick,
-        enabled = enabled,
         modifier = modifier,
         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
         colors = ButtonDefaults.buttonColors(
@@ -203,7 +233,7 @@ private fun SoundCloudLoginButton(
         ),
     ) {
         Text(
-            "Login with SoundCloud",
+            buttonText,
             style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.onSurface
         )

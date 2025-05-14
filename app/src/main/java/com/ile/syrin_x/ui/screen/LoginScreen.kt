@@ -254,18 +254,18 @@ fun ResetPasswordState(
         flow.collect {
             when (it) {
                 is Response.Loading -> {
-                    Log.i("Reset password state -> ", "Loading")
+                    Log.i("Reset Password State", "Loading")
                     isLoading.value = true
                 }
 
                 is Response.Error -> {
-                    Log.e("Reset password state -> ", it.message)
+                    Log.e("Reset Password State", it.message)
                     isLoading.value = false
                     onError()
                 }
 
                 is Response.Success -> {
-                    Log.i("Reset password state -> ", "Success")
+                    Log.i("Reset Password State", "Success")
                     isLoading.value = false
                     onSuccess()
                 }

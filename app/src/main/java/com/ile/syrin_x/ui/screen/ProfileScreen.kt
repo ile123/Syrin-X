@@ -32,6 +32,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -81,6 +82,8 @@ fun ProfileScreen(
     val userInfo by profileViewModel.userInfo
     val profileImage by profileViewModel.userProfileImage
 
+    val isUserPremium by profileViewModel.isUserPremium.collectAsState()
+
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
@@ -125,6 +128,7 @@ fun ProfileScreen(
                 onChangeProfilePicture = { launcher.launch("image/*") },
                 previouslyPlayedTracks = profileViewModel.previouslyPlayedTracks,
                 favoriteArtists = profileViewModel.favoriteArtists,
+                isUserPremium = isUserPremium,
                 favoriteTracks = profileViewModel.favoriteTracks
             )
         }
@@ -149,6 +153,7 @@ private fun ProfileContent(
     profileFlow: MutableSharedFlow<Response<Any>>,
     onError: (String) -> Unit,
     userInfo: UserInfo,
+    isUserPremium: Boolean,
     profileImageUri: String,
     onChangeProfilePicture: () -> Unit,
     previouslyPlayedTracks: List<PreviouslyPlayedTrack>,
@@ -169,6 +174,7 @@ private fun ProfileContent(
                 userInfo = userInfo,
                 imagePainter = painter,
                 onChangeProfilePicture = onChangeProfilePicture,
+                isUserPremium = isUserPremium,
                 onGetPremium = { navHostController.navigate(NavigationGraph.PaymentScreen.route) }
             )
         }
@@ -320,6 +326,7 @@ private fun ProfileContent(
 @Composable
 private fun ProfileHeader(
     userInfo: UserInfo,
+    isUserPremium: Boolean,
     imagePainter: Painter,
     onChangeProfilePicture: () -> Unit,
     onGetPremium: () -> Unit
@@ -368,13 +375,15 @@ private fun ProfileHeader(
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = "Get premium",
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Normal,
-            color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.clickable { onGetPremium() }
-        )
+        if(!isUserPremium) {
+            Text(
+                text = "Get premium",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Normal,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.clickable { onGetPremium() }
+            )
+        }
     }
 
     Spacer(modifier = Modifier.height(24.dp))

@@ -59,6 +59,13 @@ class SoundCloudAuthRepositoryImpl @Inject constructor(
         return dao.getToken(userUuid)
     }
 
+    override suspend fun deleteSoundCloudToken(userUuid: String) {
+        return withContext(Dispatchers.IO) {
+            dao.deleteToken(userUuid)
+            GlobalContext.loggedInMusicSources.remove("SoundCloud")
+        }
+    }
+
     override suspend fun refreshSoundCloudAccessToken(
         userUuid: String,
         refreshToken: String?
