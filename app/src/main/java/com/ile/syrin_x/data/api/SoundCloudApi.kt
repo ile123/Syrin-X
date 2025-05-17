@@ -8,8 +8,9 @@ import com.ile.syrin_x.data.model.soundcloud.SoundCloudPlaylistResponse
 import com.ile.syrin_x.data.model.soundcloud.SoundCloudTrackById
 import com.ile.syrin_x.data.model.soundcloud.SoundCloudTrackResponse
 import com.ile.syrin_x.data.model.soundcloud.SoundCloudTrackStreamableUrls
+import com.ile.syrin_x.data.model.soundcloud.SoundCloudTracksByUserResponse
+import com.ile.syrin_x.data.model.soundcloud.SoundCloudUser
 import com.ile.syrin_x.data.model.soundcloud.SoundCloudUserResponse
-import retrofit2.http.Field
 import retrofit2.http.GET
 import retrofit2.http.Header
 import retrofit2.http.Path
@@ -64,9 +65,25 @@ interface SoundCloudApi {
         @Path("id") id: String
     ): SoundCloudPlaylistById
 
+    @GET("users/{id}")
+    suspend fun getUserById(
+        @Header("Authorization") authorization: String,
+        @Path("id") id: String
+    ): SoundCloudUser
+
     @GET("tracks/{id}/streams")
     suspend fun getSoundCloudTrackStreamableUrls(
         @Header("Authorization") authorization: String,
         @Path("id") id: String
     ): SoundCloudTrackStreamableUrls
+
+    @GET("users/{id}/tracks")
+    suspend fun getTracksByUser(
+        @Header("Authorization") authorization: String,
+        @Path("id") userId: String,
+        @Query("access") access: List<String>,
+        @Query("limit") limit: Long,
+        @Query("offset") offset: Long,
+        @Query("linked_partitioning") linkedPartitioning: Boolean
+    ): SoundCloudTracksByUserResponse
 }

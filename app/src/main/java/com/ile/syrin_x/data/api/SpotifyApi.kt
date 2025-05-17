@@ -3,12 +3,16 @@ package com.ile.syrin_x.data.api
 import com.ile.syrin_x.data.model.spotify.PlaybackRequestBody
 import com.ile.syrin_x.data.model.spotify.SpotifyAlbum
 import com.ile.syrin_x.data.model.spotify.SpotifyAlbumByIdResponse
+import com.ile.syrin_x.data.model.spotify.SpotifyAlbumsResponse
+import com.ile.syrin_x.data.model.spotify.SpotifyArtist
+import com.ile.syrin_x.data.model.spotify.SpotifyArtistSongsResponse
 import com.ile.syrin_x.data.model.spotify.SpotifyDevicesResponse
 import com.ile.syrin_x.data.model.spotify.SpotifyPlaybackState
 import com.ile.syrin_x.data.model.spotify.SpotifyPlaybackStateResponse
 import com.ile.syrin_x.data.model.spotify.SpotifyPlaylistById
 import com.ile.syrin_x.data.model.spotify.SpotifyResponse
 import com.ile.syrin_x.data.model.spotify.SpotifyTrackDetails
+import com.ile.syrin_x.data.model.spotify.SpotifyTracksResponse
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.Field
@@ -47,6 +51,19 @@ interface SpotifyApi {
         @Header("Authorization") authorization: String,
         @Path("id") id: String
     ): SpotifyAlbumByIdResponse
+
+    @GET("v1/artists/{id}")
+    suspend fun getArtistById(
+        @Header("Authorization") authorization: String,
+        @Path("id") id: String
+    ): SpotifyArtist
+
+    @GET("v1/artists/{id}/top-tracks")
+    suspend fun getArtistTopTracks(
+        @Header("Authorization") authorization: String,
+        @Path("id") id: String,
+        @Query("market") market: String
+    ): SpotifyArtistSongsResponse
 
     @PUT("v1/me/player/play")
     suspend fun startPlayback(
@@ -96,5 +113,4 @@ interface SpotifyApi {
     suspend fun getAvailableDevices(
         @Header("Authorization") token: String
     ): Response<SpotifyDevicesResponse>
-
 }

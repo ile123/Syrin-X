@@ -2,11 +2,15 @@ package com.ile.syrin_x.domain.repository
 
 import com.ile.syrin_x.data.enums.MusicPlayerRepeatMode
 import com.ile.syrin_x.data.model.UnifiedTrack
+import com.ile.syrin_x.data.model.soundcloud.SoundCloudTracksByUserResponse
 import com.ile.syrin_x.data.model.spotify.SpotifyAlbumByIdResponse
+import com.ile.syrin_x.data.model.spotify.SpotifyArtist
+import com.ile.syrin_x.data.model.spotify.SpotifyArtistSongsResponse
 import com.ile.syrin_x.data.model.spotify.SpotifyPlaybackStateResponse
 import com.ile.syrin_x.data.model.spotify.SpotifyPlaylistById
 import com.ile.syrin_x.data.model.spotify.SpotifyResponse
 import com.ile.syrin_x.data.model.spotify.SpotifyTrackDetails
+import com.ile.syrin_x.data.model.spotify.SpotifyTracksResponse
 import com.ile.syrin_x.domain.core.Response
 import kotlinx.coroutines.flow.Flow
 
@@ -19,6 +23,8 @@ interface SpotifyRepository {
     suspend fun searchTrackById(id: String, accessToken: String): Flow<Response<SpotifyTrackDetails>>
     suspend fun searchPlaylistById(id: String, accessToken: String): Flow<Response<SpotifyPlaylistById>>
     suspend fun searchAlbumById(id: String, accessToken: String): Flow<Response<SpotifyAlbumByIdResponse>>
+    suspend fun searchArtistById(id: String, accessToken: String): Flow<Response<SpotifyArtist>>
+    suspend fun getAllSongsByArtist(artistId: String, offset: Long, limit: Long, accessToken: String): Flow<Response<SpotifyArtistSongsResponse>>
     suspend fun play(track: UnifiedTrack, accessToken: String)
     suspend fun resume(track: UnifiedTrack,
                        positionMs: Long,

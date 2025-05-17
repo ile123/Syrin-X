@@ -101,7 +101,12 @@ fun Content(
     onMusicSourceChange: () -> Unit
 ) {
     val keywordText = remember { mutableStateOf("") }
-    val musicSourceSelect = remember { mutableStateOf(GlobalContext.loggedInMusicSources.first()) }
+    val musicSourceSelect = remember {
+        mutableStateOf(
+            GlobalContext.loggedInMusicSources.firstOrNull()
+                ?: "Please log in to a music source."
+        )
+    }
     var showSearchInvalidDialog by remember { mutableStateOf(false) }
 
     val search = {
@@ -118,26 +123,27 @@ fun Content(
             .padding(paddingValues)
             .padding(16.dp)
     ) {
-        Column(
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .padding(top = 24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                text = "Search",
-                style = MaterialTheme.typography.displayMedium,
-                fontWeight = FontWeight.SemiBold
-            )
-            Spacer(Modifier.height(4.dp))
-            Text(
-                text = "Please select a source and enter a keyword.",
-                style = MaterialTheme.typography.bodyLarge,
-                textAlign = TextAlign.Center
-            )
+        if (GlobalContext.loggedInMusicSources.isNotEmpty()) {
+            Column(
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .padding(top = 24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "Search",
+                    style = MaterialTheme.typography.displayMedium,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = "Please select a source and enter a keyword.",
+                    style = MaterialTheme.typography.bodyLarge,
+                    textAlign = TextAlign.Center
+                )
+            }
         }
-
-        if(GlobalContext.loggedInMusicSources.size > 0) {
+        if (GlobalContext.loggedInMusicSources.isNotEmpty()) {
             Card(
                 modifier = Modifier
                     .align(Alignment.Center)
@@ -174,6 +180,7 @@ fun Content(
 
                     Button(
                         onClick = search,
+                        enabled = GlobalContext.loggedInMusicSources.isNotEmpty(),
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(48.dp),
@@ -186,7 +193,7 @@ fun Content(
         } else {
             Column(
                 modifier = Modifier
-                    .align(Alignment.TopCenter)
+                    .align(Alignment.Center)
                     .padding(top = 24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
@@ -221,7 +228,9 @@ fun MusicSourceDropdownMenu(
     onSelect: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val options = GlobalContext.loggedInMusicSources
+    val options: MutableList<String> = GlobalContext.loggedInMusicSources.ifEmpty {
+        mutableListOf("Please log in to a music source.")
+    }
     var expanded by remember { mutableStateOf(false) }
 
     ExposedDropdownMenuBox(

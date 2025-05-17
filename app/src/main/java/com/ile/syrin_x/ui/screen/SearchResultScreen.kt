@@ -500,6 +500,7 @@ fun UnifiedUserRow(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp)
+                .clickable {navHostController.navigate("artist_details_screen/${user.id}/${musicSource.name}")}
         ) {
             AsyncImage(
                 model = user.avatarUrl,

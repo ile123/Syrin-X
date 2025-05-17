@@ -10,9 +10,11 @@ import com.ile.syrin_x.data.model.soundcloud.SoundCloudPlaylistTrack
 import com.ile.syrin_x.data.model.soundcloud.SoundCloudTrack
 import com.ile.syrin_x.data.model.soundcloud.SoundCloudTrackById
 import com.ile.syrin_x.data.model.soundcloud.SoundCloudUser
+import com.ile.syrin_x.data.model.soundcloud.SoundCloudUserTracksTrack
 import com.ile.syrin_x.data.model.spotify.SpotifyAlbum
 import com.ile.syrin_x.data.model.spotify.SpotifyAlbumByIdResponse
 import com.ile.syrin_x.data.model.spotify.SpotifyArtist
+import com.ile.syrin_x.data.model.spotify.SpotifyArtistSongsTrack
 import com.ile.syrin_x.data.model.spotify.SpotifyImage
 import com.ile.syrin_x.data.model.spotify.SpotifyPlaylist
 import com.ile.syrin_x.data.model.spotify.SpotifyPlaylistById
@@ -223,3 +225,38 @@ fun fromSoundCloudPlaylistToUnifiedPlaylist(soundCloudPlaylistById: SoundCloudPl
         musicSource = MusicSource.SOUNDCLOUD
     )
 }
+
+fun List<SpotifyArtistSongsTrack>.fromSpotifyArtistTracksToUnifiedTrackList(): List<UnifiedTrack> = this
+    .filter { track -> track?.id != null }
+    .map { track ->
+        UnifiedTrack(
+            id = track.id,
+            title = track.name,
+            albumName = track.album.name,
+            artists = track.artists.map { it.name },
+            genre = track.album.album_type,
+            durationMs = track.duration_ms,
+            explicit = track.explicit,
+            popularity = track.popularity,
+            playbackUrl = "spotify:track:${track.id}",
+            artworkUrl = track.album.images.firstOrNull()?.url ?: fallbackImageUrl,
+            musicSource = MusicSource.SPOTIFY
+        )
+    }
+
+fun List<SoundCloudUserTracksTrack>.fromSoundCloudUserTracksToUnifiedTrackList(): List<UnifiedTrack> = this
+    .map { track ->
+        UnifiedTrack(
+            id = track.id.toString(),
+            title = track.title,
+            albumName = null,
+            artists = listOf(track.user.username),
+            genre = track.genre,
+            durationMs = track.duration.toInt(),
+            explicit = null,
+            popularity = track.playback_count,
+            playbackUrl = "https://api.soundcloud.com/tracks/${track.id}/stream",
+            artworkUrl = track.artwork_url ?: fallbackImageUrl,
+            musicSource = MusicSource.SOUNDCLOUD
+        )
+    }
