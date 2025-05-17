@@ -184,6 +184,30 @@ class UserRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun getUserPremiumStatus(userId: String): Flow<Response<Boolean>> = flow {
+        emit(Response.Loading)
+
+        val userRef = db.reference.child("users").child(userId)
+
+        val snapshot = suspendCancellableCoroutine<DataSnapshot> { continuation ->
+            userRef.get()
+                .addOnSuccessListener { continuation.resume(it) }
+                .addOnFailureListener { e -> continuation.resumeWithException(e) }
+        }
+
+        val data = snapshot.value as? Map<*, *>
+        if (data != null) {
+            val isPremium = data["premium"] as Boolean
+            emit(Response.Success(isPremium))
+        } else {
+            emit(Response.Error("User not found"))
+        }
+
+
+
+    }.catch { e ->
+        emit(Response.Error(e.localizedMessage ?: "Failed to fetch user"))
+    }
 
     private fun parseUserInfo(data: Map<*, *>): UserInfo {
         return UserInfo(

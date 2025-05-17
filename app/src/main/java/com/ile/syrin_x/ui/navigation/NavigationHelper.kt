@@ -22,6 +22,7 @@ import com.ile.syrin_x.ui.screen.ProfileScreen
 import com.ile.syrin_x.ui.screen.RegisterScreen
 import com.ile.syrin_x.ui.screen.SearchResultScreen
 import com.ile.syrin_x.ui.screen.SearchScreen
+import com.ile.syrin_x.ui.screen.SettingsScreen
 import com.ile.syrin_x.ui.screen.TrackDetailsScreen
 import com.ile.syrin_x.ui.screen.TrendingSongsByGenreScreen
 import com.ile.syrin_x.ui.screen.UserCreatedPlaylistsScreen
@@ -61,7 +62,7 @@ fun SetUpNavigationGraph(
         composable(
             route = NavigationGraph.MusicSourceScreen.route
         ) {
-            MusicSourceScreen()
+            MusicSourceScreen(navHostController)
         }
 
         composable(
@@ -192,6 +193,11 @@ fun SetUpNavigationGraph(
         ) {
             val genreId = it.arguments?.getString("genreId") ?: ""
             TrendingSongsByGenreScreen(navHostController, genreId)
+        }
+        composable(
+            route = NavigationGraph.SettingsScreen.route
+        ) {
+            SettingsScreen(navHostController)
         }
     }
 }

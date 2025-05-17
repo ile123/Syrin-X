@@ -15,6 +15,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -29,14 +31,21 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import coil3.compose.AsyncImage
+import com.ile.syrin_x.R
 import com.ile.syrin_x.data.enums.MusicCategory
 import com.ile.syrin_x.data.model.deezer.TrackByGenre
 import com.ile.syrin_x.domain.core.Response
+import com.ile.syrin_x.ui.screen.common.BottomBarNavigationComponent
+import com.ile.syrin_x.ui.screen.common.HeaderComponent
 import com.ile.syrin_x.ui.screen.common.MyCircularProgress
 import com.ile.syrin_x.utils.formatDuration
 import com.ile.syrin_x.viewModel.TrendingSongsByGenreViewModel
@@ -60,7 +69,13 @@ fun TrendingSongsByGenreScreen(
 
     Scaffold(
         snackbarHost = { SnackbarHost(hostState = hostState) },
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier.fillMaxSize(),
+        topBar = {
+            HeaderComponent(navHostController)
+        },
+        bottomBar = {
+            BottomBarNavigationComponent(navHostController)
+        }
     ) { paddingValues ->
         TrendingSongsByGenreContent(
             paddingValues,
@@ -88,7 +103,7 @@ fun TrendingSongsByGenreContent(
     searchSongByGenreSuccess: () -> Unit,
     searchSongByGenreError: (error: String) -> Unit,
     trendingSongsByGenreViewModel: TrendingSongsByGenreViewModel
-    ) {
+) {
     val chartingTracksLazyListState = rememberLazyListState()
 
     LaunchedEffect(chartingTracksLazyListState) {
@@ -105,7 +120,12 @@ fun TrendingSongsByGenreContent(
             .fillMaxSize()
             .padding(paddingValues)
     ) {
-        Text("Current topping songs")
+        Text(
+            "Current topping songs",
+            style = MaterialTheme.typography.displayMedium,
+            fontWeight = FontWeight.SemiBold,
+            textAlign = TextAlign.Center
+        )
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -124,43 +144,56 @@ fun TrendingSongsByGenreRow(
     track: TrackByGenre,
     modifier: Modifier = Modifier
 ) {
-    Row(
+    Card(
         modifier = modifier
             .fillMaxWidth()
-            .padding(12.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        AsyncImage(
-            model = track.album.cover_medium ?: track.album.cover,
-            contentDescription = "${track.title} album cover",
-            modifier = Modifier
-                .size(64.dp)
-                .clip(RoundedCornerShape(8.dp))
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        shape = RoundedCornerShape(12.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
         )
-
-        Spacer(modifier = Modifier.width(12.dp))
-
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = track.title,
-                style = MaterialTheme.typography.titleMedium,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            AsyncImage(
+                model = track.album.cover_medium ?: track.album.cover,
+                contentDescription = "Album cover for ${track.title}",
+                contentScale = ContentScale.Crop,
+                placeholder = painterResource(R.drawable.music_note_icon),
+                error = painterResource(R.drawable.music_expandall_icon),
+                modifier = Modifier
+                    .size(64.dp)
+                    .clip(RoundedCornerShape(8.dp))
             )
 
-            Text(
-                text = track.artist.name,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
+            Spacer(modifier = Modifier.width(16.dp))
 
-            Text(
-                text = formatDuration(track.duration * 1000),
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = track.title,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = track.artist.name,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = formatDuration(track.duration * 1000),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         }
     }
 }
@@ -180,11 +213,13 @@ fun SearchSongsByGenreState(
                     Log.i("TracksByGenreFlow state", "Loading")
                     isLoading.value = true
                 }
+
                 is Response.Error -> {
                     Log.e("TracksByGenreFlow state", it.message)
                     isLoading.value = false
                     onError(it.message)
                 }
+
                 is Response.Success -> {
                     Log.i("TracksByGenreFlow state", "Success")
                     isLoading.value = false

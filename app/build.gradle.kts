@@ -111,4 +111,13 @@ dependencies {
     implementation(libs.firebase.storage.ktx)
     implementation(libs.kotlinx.coroutines.play.services)
     implementation(libs.stripe.android)
+    implementation(libs.androidx.media)
+    implementation(libs.androidx.media2.session)
+    implementation(libs.androidx.media2.common)
+    implementation(libs.androidx.media2.player)
+    implementation(libs.androidx.media2.widget)
+    implementation(libs.extension.mediasession)
+    implementation(libs.androidx.datastore.preferences)
+    implementation(libs.androidx.foundation)
+    implementation(libs.accompanist.pager.indicators)
 }

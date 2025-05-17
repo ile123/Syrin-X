@@ -18,7 +18,9 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import java.util.UUID
 import javax.inject.Inject
+import kotlin.uuid.Uuid
 
 class PreviouslyPlayedTrackRepositoryImpl @Inject constructor(
     private val trackDao: PreviouslyPlayedTrackDao,
@@ -127,6 +129,7 @@ class PreviouslyPlayedTrackRepositoryImpl @Inject constructor(
                 bumped
             } else {
                 val newEntity = PreviouslyPlayedTrackEntity(
+                    id = UUID.randomUUID().toString(),
                     trackId = track.id,
                     userId = userId,
                     title = track.title,

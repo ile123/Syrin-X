@@ -8,6 +8,8 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.drawable.BitmapDrawable
+import android.support.v4.media.MediaDescriptionCompat
+import android.support.v4.media.MediaMetadataCompat
 import android.support.v4.media.session.MediaSessionCompat
 import android.support.v4.media.session.PlaybackStateCompat
 import android.util.Log
@@ -36,6 +38,12 @@ import coil.ImageLoader
 import coil.request.ImageRequest
 import com.ile.syrin_x.domain.repository.SpotifyRepository
 import androidx.core.net.toUri
+import androidx.media2.common.MediaMetadata.METADATA_KEY_ARTIST
+import androidx.media2.common.MediaMetadata.METADATA_KEY_DURATION
+import androidx.media2.common.MediaMetadata.METADATA_KEY_TITLE
+import com.google.android.exoplayer2.ext.mediasession.MediaSessionConnector
+import com.google.android.exoplayer2.ext.mediasession.TimelineQueueNavigator
+import com.ile.syrin_x.data.enums.ShuffleMode
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
@@ -65,9 +73,14 @@ class UnifiedAudioPlayer @Inject constructor(
     val currentRepeatMode: MusicPlayerRepeatMode
         get() = _currentRepeatMode
 
-    lateinit var notificationManager: PlayerNotificationManager
+    private var _currentShuffleMode: ShuffleMode = ShuffleMode.OFF
+    val currentShuffleMode: ShuffleMode
+        get() = _currentShuffleMode
+
+    private lateinit var notificationManager: PlayerNotificationManager
     lateinit var currentNotification: Notification
     private lateinit var mediaSession: MediaSessionCompat
+    private lateinit var mediaSessionConnector: MediaSessionConnector
 
     private var pollingScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private var positionPollingJob: Job? = null
@@ -75,12 +88,31 @@ class UnifiedAudioPlayer @Inject constructor(
     private val _onTrackEnded = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
     override val onTrackEnded: SharedFlow<Unit> = _onTrackEnded.asSharedFlow()
 
+    private var isServiceForeground = false
+
     var onSkipNext: (() -> Unit)? = null
     var onSkipPrevious: (() -> Unit)? = null
 
     init {
         setupMediaSession()
         setupNotification()
+    }
+
+    private fun resetPlayer() {
+        positionPollingJob?.cancel()
+        pollingScope.cancel()
+        exoPlayer.release()
+        mediaSession.release()
+
+        pollingScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+        exoPlayer = ExoPlayer.Builder(context).build().apply { addListener(playerListener) }
+
+        mediaSession = MediaSessionCompat(context, "SyrinXMediaSession").apply { /* ... */ }
+        mediaSessionConnector = MediaSessionConnector(mediaSession)
+        mediaSessionConnector.setPlayer(exoPlayer)
+
+        setupNotification()
+        notificationManager.setPlayer(exoPlayer)
     }
 
     private fun ensurePlayerInitialized() {
@@ -103,19 +135,37 @@ class UnifiedAudioPlayer @Inject constructor(
             })
             isActive = true
         }
+
+        mediaSessionConnector = MediaSessionConnector(mediaSession)
+        mediaSessionConnector.setPlayer(exoPlayer)
+
+        mediaSessionConnector.setQueueNavigator(object : TimelineQueueNavigator(mediaSession) {
+            override fun getMediaDescription(player: Player, windowIndex: Int): MediaDescriptionCompat {
+                val track = currentTrack
+                return MediaDescriptionCompat.Builder()
+                    .setTitle(track?.title ?: "Unknown")
+                    .setDescription(track?.artists?.joinToString(", ") ?: "")
+                    .build()
+            }
+        })
     }
 
     private fun setupNotification() {
         val channelId = "music_playback_channel"
-        val channel = NotificationChannel(channelId, "Playback", NotificationManager.IMPORTANCE_LOW)
-        context.getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
+        val channel = NotificationChannel(
+            channelId,
+            "Playback",
+            NotificationManager.IMPORTANCE_LOW
+        )
 
-        notificationManager = PlayerNotificationManager.Builder(context, 1001, channelId)
+        context.getSystemService(NotificationManager::class.java)
+            .createNotificationChannel(channel)
+
+        val builder = PlayerNotificationManager.Builder(context, 1001, channelId)
             .setMediaDescriptionAdapter(object : PlayerNotificationManager.MediaDescriptionAdapter {
                 override fun getCurrentContentTitle(player: Player): CharSequence {
                     return player.mediaMetadata.title ?: "Unknown"
                 }
-
                 override fun createCurrentContentIntent(player: Player): PendingIntent? {
                     val intent = Intent(context, MainActivity::class.java).apply {
                         action = Intent.ACTION_MAIN
@@ -127,11 +177,9 @@ class UnifiedAudioPlayer @Inject constructor(
                         PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
                     )
                 }
-
                 override fun getCurrentContentText(player: Player): CharSequence? {
                     return player.mediaMetadata.artist
                 }
-
                 override fun getCurrentLargeIcon(
                     player: Player,
                     callback: PlayerNotificationManager.BitmapCallback
@@ -158,30 +206,53 @@ class UnifiedAudioPlayer @Inject constructor(
                     ongoing: Boolean
                 ) {
                     currentNotification = notification
-                    Intent(context, MusicPlaybackService::class.java).also { serviceIntent ->
-                        serviceIntent.putExtra("notification_id", id)
+                    val serviceIntent = Intent(context, MusicPlaybackService::class.java)
+                        .apply { putExtra("notification_id", id) }
+
+                    if (!isServiceForeground) {
                         ContextCompat.startForegroundService(context, serviceIntent)
+                        isServiceForeground = true
+                    } else {
+                        context.getSystemService(NotificationManager::class.java)
+                            .notify(id, notification)
                     }
                 }
-
                 override fun onNotificationCancelled(id: Int, dismissedByUser: Boolean) {
                     if (exoPlayer.isPlaying) pause()
                 }
             })
-            .build()
 
-        notificationManager.setPlayer(exoPlayer)
-        notificationManager.setMediaSessionToken(mediaSession.sessionToken)
+        notificationManager = builder.build()
+
         notificationManager.setUsePlayPauseActions(true)
-        notificationManager.setUseNextAction(true)
         notificationManager.setUsePreviousAction(true)
+        notificationManager.setUseNextAction(true)
+        notificationManager.setUseFastForwardAction(true)
+        notificationManager.setUseRewindAction(true)
         notificationManager.setUseChronometer(true)
+
+        notificationManager.setMediaSessionToken(mediaSession.sessionToken)
+        notificationManager.setPlayer(exoPlayer)
     }
 
     override fun play(track: UnifiedTrack) {
-        ensurePlayerInitialized()
+        resetPlayer()
+
         currentTrack = track
         currentSource = track.musicSource
+        val durationMs = track.durationMs ?: 0L
+
+        mediaSession.setMetadata(
+            MediaMetadataCompat.Builder()
+                .putString(METADATA_KEY_TITLE,  track.title)
+                .putString(METADATA_KEY_ARTIST, track.artists?.joinToString(", "))
+                .putLong(  METADATA_KEY_DURATION, durationMs.toLong())
+                .build()
+        )
+        _playbackPosition.value = 0L
+        _duration.value = durationMs.toLong()
+        _isPlaying.value = true
+        updateMediaSessionPlaybackState()
 
         when (track.musicSource) {
             MusicSource.SOUNDCLOUD -> playWithExoPlayer(track)
@@ -197,36 +268,34 @@ class UnifiedAudioPlayer @Inject constructor(
     private fun playWithExoPlayer(track: UnifiedTrack) {
         val playbackUrl = track.playbackUrl ?: return
 
-        val mediaItem = MediaItem.Builder()
-            .setUri(playbackUrl)
-            .setMediaMetadata(
-                MediaMetadata.Builder()
-                    .setTitle(track.title)
-                    .setArtist(track.artists?.joinToString(", "))
-                    .setArtworkUri(track.artworkUrl?.toUri())
-                    .build()
-            )
+        val mediaMetadata = MediaMetadata.Builder()
+            .setTitle(track.title)
+            .setArtist(track.artists?.joinToString(", "))
+            .setArtworkUri(track.artworkUrl?.toUri())
             .build()
 
-        val dataSourceFactory = DefaultHttpDataSource.Factory()
-            .setUserAgent("SyrinX-App/1.0")
-            .setDefaultRequestProperties(
-                mapOf("Authorization" to "OAuth ${GlobalContext.Tokens.soundCloudToken}")
-            )
+        val mediaItem = MediaItem.Builder()
+            .setUri(playbackUrl)
+            .setMediaMetadata(mediaMetadata)
+            .build()
 
-        val mediaSource = ProgressiveMediaSource.Factory(dataSourceFactory)
-            .createMediaSource(mediaItem)
+        val source = ProgressiveMediaSource.Factory(
+            DefaultHttpDataSource.Factory()
+                .setUserAgent("SyrinX-App/1.0")
+                .setDefaultRequestProperties(
+                    mapOf("Authorization" to "OAuth ${GlobalContext.Tokens.soundCloudToken}")
+                )
+        ).createMediaSource(mediaItem)
 
-        exoPlayer.clearMediaItems()
-        exoPlayer.removeListener(playerListener)
-        exoPlayer.addListener(playerListener)
-
-        exoPlayer.seekTo(0)
-        _playbackPosition.value = 0L
-
-        exoPlayer.setMediaSource(mediaSource)
-        exoPlayer.prepare()
-        exoPlayer.play()
+        exoPlayer.apply {
+            clearMediaItems()
+            removeListener(playerListener)
+            addListener(playerListener)
+            setMediaSource(source)
+            prepare()
+            play()
+            seekTo(0)
+        }
 
         startPositionPolling()
     }
@@ -245,9 +314,23 @@ class UnifiedAudioPlayer @Inject constructor(
                 }
                 Player.STATE_ENDED -> {
                     positionPollingJob?.cancel()
-                    _onTrackEnded.tryEmit(Unit)
+
+                    if (currentSource == MusicSource.SOUNDCLOUD) {
+                        when (currentRepeatMode) {
+                            MusicPlayerRepeatMode.ALL -> {
+                                seekTo(0L)
+                                exoPlayer.play()
+                                startPositionPolling()
+                            }
+                            MusicPlayerRepeatMode.OFF -> {
+                                _onTrackEnded.tryEmit(Unit)
+                            }
+                        }
+                    } else {
+                        _onTrackEnded.tryEmit(Unit)
+                    }
                 }
-                else -> { /* do nothing */ }
+                else -> { }
             }
         }
 
@@ -265,7 +348,7 @@ class UnifiedAudioPlayer @Inject constructor(
             while (isActive) {
                 if (currentSource == MusicSource.SOUNDCLOUD) {
                     _playbackPosition.value = exoPlayer.currentPosition
-
+                    updateMediaSessionPlaybackState()
                 } else if (currentSource == MusicSource.SPOTIFY) {
                     try {
                         val token = GlobalContext.Tokens.spotifyToken
@@ -295,23 +378,33 @@ class UnifiedAudioPlayer @Inject constructor(
                         Log.e("UnifiedAudioPlayer", "Spotify polling failed", e)
                     }
                 }
-                delay(1_000L)
+                delay(1000L)
             }
         }
     }
 
     private fun updateMediaSessionPlaybackState() {
-        val state = if (exoPlayer.isPlaying) PlaybackStateCompat.STATE_PLAYING else PlaybackStateCompat.STATE_PAUSED
+        val pos = if (currentSource == MusicSource.SOUNDCLOUD)
+            exoPlayer.currentPosition
+        else
+            _playbackPosition.value
+
+        val state = if (_isPlaying.value)
+            PlaybackStateCompat.STATE_PLAYING
+        else
+            PlaybackStateCompat.STATE_PAUSED
+
         val playbackState = PlaybackStateCompat.Builder()
             .setActions(
                 PlaybackStateCompat.ACTION_PLAY or
                         PlaybackStateCompat.ACTION_PAUSE or
-                        PlaybackStateCompat.ACTION_SKIP_TO_NEXT or
                         PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS or
+                        PlaybackStateCompat.ACTION_SKIP_TO_NEXT or
                         PlaybackStateCompat.ACTION_SEEK_TO
             )
-            .setState(state, exoPlayer.currentPosition, 1f)
+            .setState(state, pos, 1f)
             .build()
+
         mediaSession.setPlaybackState(playbackState)
     }
 

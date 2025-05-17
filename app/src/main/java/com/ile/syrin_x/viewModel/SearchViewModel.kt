@@ -36,6 +36,7 @@ import com.ile.syrin_x.utils.toSpotifyUnifiedUsers
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -389,15 +390,48 @@ class SearchViewModel @Inject constructor(
         }
     }
 
-    fun addOrRemoveArtistFromUserFavorites(artist: UnifiedUser) = viewModelScope.launch {
-        getUserUidUseCase.invoke().collect { userUid ->
-            val favoriteArtistToAddOrRemove = FavoriteArtist(artist.id, userUid, artist.name ?: "Piotr Musial")
-            addOrRemoveArtistFromFavoritesUseCase(favoriteArtistToAddOrRemove).collect {
-                if(favoriteArtists.find { x -> x.id == favoriteArtistToAddOrRemove.id } == null) {
-                    favoriteArtists.add(favoriteArtistToAddOrRemove)
+    fun toggleArtistFavorite(artist: UnifiedUser) = viewModelScope.launch {
+        val userUid = getUserUidUseCase.invoke().first()
+        val fav = FavoriteArtist(artist.id, userUid, artist.name.orEmpty())
+
+        val currentlyFavorited = favoriteArtists.any { it.id == fav.id }
+
+        if (currentlyFavorited) {
+            favoriteArtists.removeAll { it.id == fav.id }
+        } else {
+            favoriteArtists.add(fav)
+        }
+
+        addOrRemoveArtistFromFavoritesUseCase(fav).collect { response ->
+            if (response is Response.Error) {
+                if (currentlyFavorited) {
+                    favoriteArtists.add(fav)
                 } else {
-                    favoriteArtists.remove(favoriteArtistToAddOrRemove)
+                    favoriteArtists.removeAll { it.id == fav.id }
                 }
+                Log.e("SearchViewModel", "Toggle favorite failed: ${response.message}")
+            }
+        }
+    }
+
+
+    fun addOrRemoveArtistFromUserFavorites(artist: UnifiedUser) = viewModelScope.launch {
+        val userUid = getUserUidUseCase.invoke().first()
+        val fav = FavoriteArtist(artist.id, userUid, artist.name.orEmpty())
+
+        addOrRemoveArtistFromFavoritesUseCase(fav).collect { response ->
+            when (response) {
+                is Response.Success<*> -> {
+                    if (favoriteArtists.any { it.id == fav.id }) {
+                        favoriteArtists.removeAll { it.id == fav.id }
+                    } else {
+                        favoriteArtists.add(fav)
+                    }
+                }
+                is Response.Error -> {
+                    Log.e("SearchViewModel", "couldn't toggle favorite: ${response.message}")
+                }
+                else -> { }
             }
         }
     }

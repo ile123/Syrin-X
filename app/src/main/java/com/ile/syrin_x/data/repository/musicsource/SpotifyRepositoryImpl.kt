@@ -6,10 +6,13 @@ import com.ile.syrin_x.data.enums.MusicPlayerRepeatMode
 import com.ile.syrin_x.data.model.UnifiedTrack
 import com.ile.syrin_x.data.model.spotify.PlaybackRequestBody
 import com.ile.syrin_x.data.model.spotify.SpotifyAlbumByIdResponse
+import com.ile.syrin_x.data.model.spotify.SpotifyArtist
+import com.ile.syrin_x.data.model.spotify.SpotifyArtistSongsResponse
 import com.ile.syrin_x.data.model.spotify.SpotifyPlaybackStateResponse
 import com.ile.syrin_x.data.model.spotify.SpotifyPlaylistById
 import com.ile.syrin_x.data.model.spotify.SpotifyResponse
 import com.ile.syrin_x.data.model.spotify.SpotifyTrackDetails
+import com.ile.syrin_x.data.model.spotify.SpotifyTracksResponse
 import com.ile.syrin_x.domain.core.Response
 import com.ile.syrin_x.domain.repository.SpotifyRepository
 import com.ile.syrin_x.utils.GlobalContext
@@ -19,11 +22,21 @@ import javax.inject.Inject
 
 class SpotifyRepositoryImpl @Inject constructor(
     private val api: SpotifyApi
-): SpotifyRepository {
-    override suspend fun searchAll(keyword: String, accessToken: String): Flow<Response<SpotifyResponse>> = flow {
+) : SpotifyRepository {
+    override suspend fun searchAll(
+        keyword: String,
+        accessToken: String
+    ): Flow<Response<SpotifyResponse>> = flow {
         try {
             emit(Response.Loading)
-            val data = api.getContent("Bearer $accessToken", keyword, "track,album,playlist,artist", "HR", 20, 0)
+            val data = api.getContent(
+                "Bearer $accessToken",
+                keyword,
+                "track,album,playlist,artist",
+                "HR",
+                20,
+                0
+            )
             emit(Response.Success(data))
         } catch (e: Exception) {
             Log.d("SpotifyRepository Error", e.message.toString())
@@ -31,7 +44,12 @@ class SpotifyRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun searchTracks(keyword: String, limit: Long, offset: Long, accessToken: String): Flow<Response<SpotifyResponse>> = flow {
+    override suspend fun searchTracks(
+        keyword: String,
+        limit: Long,
+        offset: Long,
+        accessToken: String
+    ): Flow<Response<SpotifyResponse>> = flow {
         try {
             emit(Response.Loading)
             val data = api.getContent("Bearer $accessToken", keyword, "track", "HR", limit, offset)
@@ -42,7 +60,12 @@ class SpotifyRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun searchAlbums(keyword: String, limit: Long, offset: Long, accessToken: String): Flow<Response<SpotifyResponse>> = flow {
+    override suspend fun searchAlbums(
+        keyword: String,
+        limit: Long,
+        offset: Long,
+        accessToken: String
+    ): Flow<Response<SpotifyResponse>> = flow {
         try {
             emit(Response.Loading)
             val data = api.getContent("Bearer $accessToken", keyword, "album", "HR", limit, offset)
@@ -53,10 +76,16 @@ class SpotifyRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun searchPlaylists(keyword: String, limit: Long, offset: Long, accessToken: String): Flow<Response<SpotifyResponse>> = flow {
+    override suspend fun searchPlaylists(
+        keyword: String,
+        limit: Long,
+        offset: Long,
+        accessToken: String
+    ): Flow<Response<SpotifyResponse>> = flow {
         try {
             emit(Response.Loading)
-            val data = api.getContent("Bearer $accessToken", keyword, "playlist", "HR", limit, offset)
+            val data =
+                api.getContent("Bearer $accessToken", keyword, "playlist", "HR", limit, offset)
             emit(Response.Success(data))
         } catch (e: Exception) {
             Log.d("SpotifyRepository Error", e.message.toString())
@@ -64,7 +93,12 @@ class SpotifyRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun searchArtists(keyword: String, limit: Long, offset: Long, accessToken: String): Flow<Response<SpotifyResponse>> = flow {
+    override suspend fun searchArtists(
+        keyword: String,
+        limit: Long,
+        offset: Long,
+        accessToken: String
+    ): Flow<Response<SpotifyResponse>> = flow {
         try {
             emit(Response.Loading)
             val data = api.getContent("Bearer $accessToken", keyword, "artist", "HR", limit, offset)
@@ -117,13 +151,44 @@ class SpotifyRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun searchArtistById(
+        id: String,
+        accessToken: String
+    ): Flow<Response<SpotifyArtist>> = flow {
+        try {
+            emit(Response.Loading)
+            val data = api.getArtistById("Bearer $accessToken", id)
+            emit(Response.Success(data))
+        } catch (e: Exception) {
+            Log.d("SpotifyRepository Error", e.message.toString())
+            emit(Response.Error(e.message.toString()))
+        }
+    }
+
+    override suspend fun getAllSongsByArtist(
+        artistId: String,
+        offset: Long,
+        limit: Long,
+        accessToken: String
+    ): Flow<Response<SpotifyArtistSongsResponse>> = flow {
+        try {
+            emit(Response.Loading)
+            val data = api.getArtistTopTracks("Bearer $accessToken", artistId, "HR")
+            emit(Response.Success(data))
+        } catch (e: Exception) {
+            Log.d("SpotifyRepository Error", e.message.toString())
+            emit(Response.Error(e.message.toString()))
+        }
+    }
+
     override suspend fun play(track: UnifiedTrack, accessToken: String) {
         try {
-            if(GlobalContext.spotifyDeviceId.isEmpty()) {
+            if (GlobalContext.spotifyDeviceId.isEmpty()) {
                 getDeviceId("Bearer $accessToken")
             }
             val body = PlaybackRequestBody(uris = listOf(track.playbackUrl), position_ms = 0)
-            val response = api.startPlayback("Bearer $accessToken", GlobalContext.spotifyDeviceId, body)
+            val response =
+                api.startPlayback("Bearer $accessToken", GlobalContext.spotifyDeviceId, body)
             if (!response.isSuccessful) {
                 Log.e("SpotifyPlayback", "Play failed: ${response.code()} ${response.message()}")
             }
@@ -132,9 +197,11 @@ class SpotifyRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun resume(track: UnifiedTrack,
-                                positionMs: Long,
-                                accessToken: String) {
+    override suspend fun resume(
+        track: UnifiedTrack,
+        positionMs: Long,
+        accessToken: String
+    ) {
         if (GlobalContext.spotifyDeviceId.isEmpty()) {
             getDeviceId("Bearer $accessToken")
         }
@@ -148,13 +215,16 @@ class SpotifyRepositoryImpl @Inject constructor(
             body = body
         )
         if (!response.isSuccessful) {
-            Log.e("SpotifyPlayback", "Resume track failed: ${response.code()} ${response.message()}")
+            Log.e(
+                "SpotifyPlayback",
+                "Resume track failed: ${response.code()} ${response.message()}"
+            )
         }
     }
 
     override suspend fun pause(accessToken: String) {
         try {
-            if(GlobalContext.spotifyDeviceId.isEmpty()) {
+            if (GlobalContext.spotifyDeviceId.isEmpty()) {
                 getDeviceId("Bearer $accessToken")
             }
             val response = api.pausePlayback("Bearer $accessToken", GlobalContext.spotifyDeviceId)
@@ -168,10 +238,11 @@ class SpotifyRepositoryImpl @Inject constructor(
 
     override suspend fun seekTo(positionMs: Long, accessToken: String) {
         try {
-            if(GlobalContext.spotifyDeviceId.isEmpty()) {
+            if (GlobalContext.spotifyDeviceId.isEmpty()) {
                 getDeviceId("Bearer $accessToken")
             }
-            val response = api.seekToPosition("Bearer $accessToken", positionMs, GlobalContext.spotifyDeviceId)
+            val response =
+                api.seekToPosition("Bearer $accessToken", positionMs, GlobalContext.spotifyDeviceId)
             if (!response.isSuccessful) {
                 Log.e("SpotifyPlayback", "Seek failed: ${response.code()} ${response.message()}")
             }
@@ -182,12 +253,15 @@ class SpotifyRepositoryImpl @Inject constructor(
 
     override suspend fun skipToNext(accessToken: String) {
         try {
-            if(GlobalContext.spotifyDeviceId.isEmpty()) {
+            if (GlobalContext.spotifyDeviceId.isEmpty()) {
                 getDeviceId("Bearer $accessToken")
             }
             val response = api.skipNext("Bearer $accessToken", GlobalContext.spotifyDeviceId)
             if (!response.isSuccessful) {
-                Log.e("SpotifyPlayback", "Skip to next failed: ${response.code()} ${response.message()}")
+                Log.e(
+                    "SpotifyPlayback",
+                    "Skip to next failed: ${response.code()} ${response.message()}"
+                )
             }
         } catch (e: Exception) {
             Log.e("SpotifyPlayback", "Skip to next failed: ${e.message}")
@@ -196,12 +270,15 @@ class SpotifyRepositoryImpl @Inject constructor(
 
     override suspend fun skipToPrevious(accessToken: String) {
         try {
-            if(GlobalContext.spotifyDeviceId.isEmpty()) {
+            if (GlobalContext.spotifyDeviceId.isEmpty()) {
                 getDeviceId("Bearer $accessToken")
             }
             val response = api.skipPrevious("Bearer $accessToken", GlobalContext.spotifyDeviceId)
             if (!response.isSuccessful) {
-                Log.e("SpotifyPlayback", "Skip to previous failed: ${response.code()} ${response.message()}")
+                Log.e(
+                    "SpotifyPlayback",
+                    "Skip to previous failed: ${response.code()} ${response.message()}"
+                )
             }
         } catch (e: Exception) {
             Log.e("SpotifyPlayback", "Skip to previous failed: ${e.message}")
@@ -211,17 +288,20 @@ class SpotifyRepositoryImpl @Inject constructor(
     override suspend fun setRepeatMode(mode: MusicPlayerRepeatMode, accessToken: String) {
         val apiState = when (mode) {
             MusicPlayerRepeatMode.OFF -> "off"
-            MusicPlayerRepeatMode.ONE -> "track"
             MusicPlayerRepeatMode.ALL -> "context"
         }
 
         try {
-            if(GlobalContext.spotifyDeviceId.isEmpty()) {
+            if (GlobalContext.spotifyDeviceId.isEmpty()) {
                 getDeviceId("Bearer $accessToken")
             }
-            val response = api.setRepeatMode("Bearer $accessToken", apiState, GlobalContext.spotifyDeviceId)
+            val response =
+                api.setRepeatMode("Bearer $accessToken", apiState, GlobalContext.spotifyDeviceId)
             if (!response.isSuccessful) {
-                Log.e("SpotifyPlayback", "Set repeat mode failed: ${response.code()} ${response.message()}")
+                Log.e(
+                    "SpotifyPlayback",
+                    "Set repeat mode failed: ${response.code()} ${response.message()}"
+                )
             }
         } catch (e: Exception) {
             Log.e("SpotifyPlayback", "Set repeat mode failed: ${e.message}")
@@ -235,7 +315,7 @@ class SpotifyRepositoryImpl @Inject constructor(
 
     override suspend fun getCurrentPlayback(accessToken: String): SpotifyPlaybackStateResponse? {
         try {
-            if(GlobalContext.spotifyDeviceId.isEmpty()) {
+            if (GlobalContext.spotifyDeviceId.isEmpty()) {
                 getDeviceId("Bearer $accessToken")
             }
             val response = api.getCurrentPlayback("Bearer $accessToken")

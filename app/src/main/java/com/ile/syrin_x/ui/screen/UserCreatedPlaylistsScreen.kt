@@ -23,24 +23,34 @@ import androidx.compose.foundation.layout.padding
 
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.collectAsState
 
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.ile.syrin_x.data.model.usercreatedplaylist.UserCreatedPlaylist
 import com.ile.syrin_x.ui.screen.common.AddOrEditPlaylistModal
+import com.ile.syrin_x.ui.screen.common.BottomBarNavigationComponent
+import com.ile.syrin_x.ui.screen.common.HeaderComponent
 import com.ile.syrin_x.viewModel.PlaylistManagementViewModel
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UserCreatedPlaylistsScreen(
     navHostController: NavHostController,
@@ -52,53 +62,59 @@ fun UserCreatedPlaylistsScreen(
     LaunchedEffect(Unit) {
         playlistManagementViewModel.getAllUsersPlaylists()
     }
-    val playlists = playlistManagementViewModel.userPlaylists
+    val playlists by playlistManagementViewModel.userPlaylists.collectAsState(initial = emptyList())
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Your Playlists") }
-            )
+            HeaderComponent(navHostController)
+        },
+        bottomBar = {
+            BottomBarNavigationComponent(navHostController)
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = { showAddModal = true }) {
-                Icon(Icons.Default.Add, contentDescription = "New playlist")
+            FloatingActionButton(
+                onClick = { showAddModal = true },
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = "New playlist"
+                )
             }
         }
     ) { paddingValues ->
         LazyColumn(
             contentPadding = paddingValues,
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier.fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
+
+            item {
+                Text(
+                    "Created Playlists",
+                    style = MaterialTheme.typography.displaySmall,
+                    textAlign = TextAlign.Center,
+                    fontWeight = FontWeight.Normal
+                )
+            }
+
             items(
                 items = playlists,
                 key = { it.userCreatedPlaylistId }
             ) { playlist ->
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 8.dp, horizontal = 16.dp)
-                ) {
-                    Text(
-                        text = playlist.name,
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier
-                            .weight(1f)
-                            .clickable {
-                                navHostController.navigate("user_created_playlist_details_screen/${playlist.userCreatedPlaylistId}")
-                            }
-                    )
-                    IconButton(onClick = { playlistToEdit = playlist }) {
-                        Icon(Icons.Default.Edit, contentDescription = "Rename playlist")
-                    }
-                    IconButton(onClick = {
+                UserCreatedPlaylistRow(
+                    playlist = playlist,
+                    onClick = {
+                        navHostController.navigate(
+                            "user_created_playlist_details_screen/${playlist.userCreatedPlaylistId}"
+                        )
+                    },
+                    onEdit = { playlistToEdit = playlist },
+                    onDelete = {
                         playlistManagementViewModel.deletePlaylist(playlist.userCreatedPlaylistId)
-                    }) {
-                        Icon(Icons.Default.Delete, contentDescription = "Delete playlist")
                     }
-                }
-                Divider()
+                )
             }
         }
     }
@@ -121,5 +137,57 @@ fun UserCreatedPlaylistsScreen(
             cancelable = true,
             onDismiss = { playlistToEdit = null }
         )
+    }
+}
+
+@Composable
+fun UserCreatedPlaylistRow(
+    playlist: UserCreatedPlaylist,
+    onClick: () -> Unit,
+    onEdit: () -> Unit,
+    onDelete: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp, horizontal = 16.dp),
+        onClick = onClick,
+        shape = RoundedCornerShape(12.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        )
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .padding(horizontal = 16.dp, vertical = 12.dp)
+        ) {
+            Text(
+                text = playlist.name,
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f)
+            )
+
+            IconButton(onClick = onEdit) {
+                Icon(
+                    imageVector = Icons.Default.Edit,
+                    contentDescription = "Rename playlist",
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
+
+            IconButton(onClick = onDelete) {
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = "Delete playlist",
+                    tint = MaterialTheme.colorScheme.error
+                )
+            }
+        }
     }
 }

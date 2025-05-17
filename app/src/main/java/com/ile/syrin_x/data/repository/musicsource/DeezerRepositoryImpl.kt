@@ -16,7 +16,7 @@ class DeezerRepositoryImpl @Inject constructor(
     override suspend fun getAllGenres(): Flow<Response<List<MusicGenre>>> = flow {
         try {
             emit(Response.Loading)
-            val data = api.getGenres()
+            val data = api.getGenres("en")
             emit(Response.Success(data.data))
         } catch (e: Exception) {
             Log.d("DeezerRepository Error", e.message.toString())
@@ -27,7 +27,7 @@ class DeezerRepositoryImpl @Inject constructor(
     override suspend fun getAllTrendingSongsByGenre(genreId: Long, limit: Long, offset: Long): Flow<Response<List<TrackByGenre>>> = flow {
         try {
             emit(Response.Loading)
-            val data = api.getTrendingTracksByGenre(genreId, limit, offset)
+            val data = api.getTrendingTracksByGenre(genreId,"en", limit, offset)
             emit(Response.Success(data.data))
         } catch (e: Exception) {
             Log.d("DeezerRepository Error", e.message.toString())

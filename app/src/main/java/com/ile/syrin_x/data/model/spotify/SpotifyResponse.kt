@@ -250,3 +250,55 @@ data class SpotifyAlbumByIdResponse(
     val artists: List<SpotifyArtist>?,
     val tracks: SpotifyTracksResponse?
 )
+
+data class SpotifyArtistSongsResponse(
+    val tracks: List<SpotifyArtistSongsTrack>
+)
+
+data class SpotifyArtistSongsTrack(
+    val album: SpotifyArtistSongsAlbum,
+    val artists: List<SpotifyArtistSongsArtist>,
+    val available_markets: List<String>,
+    val disc_number: Int,
+    val duration_ms: Int,
+    val explicit: Boolean,
+    val href: String,
+    val id: String,
+    val is_playable: Boolean,
+    val name: String,
+    val popularity: Int,
+    val preview_url: String?,
+    val track_number: Int,
+    val type: String,
+    val uri: String,
+    val is_local: Boolean
+)
+
+data class SpotifyArtistSongsAlbum(
+    val album_type: String,
+    val total_tracks: Int,
+    val available_markets: List<String>,
+    val href: String,
+    val id: String,
+    val images: List<SpotifyArtistSongsImage>,
+    val name: String,
+    val release_date: String,
+    val release_date_precision: String,
+    val type: String,
+    val uri: String,
+    val artists: List<SpotifyArtistSongsArtist>
+)
+
+data class SpotifyArtistSongsImage(
+    val url: String,
+    val height: Int,
+    val width: Int
+)
+
+data class SpotifyArtistSongsArtist(
+    val href: String,
+    val id: String,
+    val name: String,
+    val type: String,
+    val uri: String
+)

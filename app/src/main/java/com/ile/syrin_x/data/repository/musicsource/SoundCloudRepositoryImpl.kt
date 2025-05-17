@@ -13,8 +13,13 @@ import javax.inject.Inject
 
 class SoundCloudRepositoryImpl @Inject constructor(
     private val api: SoundCloudApi
-): SoundCloudRepository {
-    override suspend fun searchTracks(keyword: String, limit: Long, offset: Long, accessToken: String): Flow<Response<Any>> = flow {
+) : SoundCloudRepository {
+    override suspend fun searchTracks(
+        keyword: String,
+        limit: Long,
+        offset: Long,
+        accessToken: String
+    ): Flow<Response<Any>> = flow {
         try {
             emit(Response.Loading)
             val authorization = "OAuth $accessToken"
@@ -32,7 +37,7 @@ class SoundCloudRepositoryImpl @Inject constructor(
                 limit,
                 offset,
                 true
-                )
+            )
             emit(Response.Success(result))
         } catch (e: Exception) {
             Log.d("SoundCloud Search Error", e.message.toString())
@@ -40,7 +45,12 @@ class SoundCloudRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun searchUsers(keyword: String, limit: Long, offset: Long, accessToken: String): Flow<Response<Any>> = flow {
+    override suspend fun searchUsers(
+        keyword: String,
+        limit: Long,
+        offset: Long,
+        accessToken: String
+    ): Flow<Response<Any>> = flow {
         try {
             emit(Response.Loading)
             val authorization = "OAuth $accessToken"
@@ -52,7 +62,12 @@ class SoundCloudRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun searchPlaylists(keyword: String, limit: Long, offset: Long, accessToken: String): Flow<Response<Any>> = flow {
+    override suspend fun searchPlaylists(
+        keyword: String,
+        limit: Long,
+        offset: Long,
+        accessToken: String
+    ): Flow<Response<Any>> = flow {
         try {
             emit(Response.Loading)
             val authorization = "OAuth $accessToken"
@@ -65,11 +80,40 @@ class SoundCloudRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun searchTrackById(id: String, accessToken: String): Flow<Response<Any>> = flow {
+    override suspend fun searchTrackById(id: String, accessToken: String): Flow<Response<Any>> =
+        flow {
+            try {
+                emit(Response.Loading)
+                val authorization = "OAuth $accessToken"
+                val result = api.getTrackById(authorization, id)
+                emit(Response.Success(result))
+            } catch (e: Exception) {
+                Log.d("SoundCloud Search Error", e.message.toString())
+                emit(Response.Error(e.message.toString()))
+            }
+        }
+
+    override suspend fun searchPlaylistById(id: String, accessToken: String): Flow<Response<Any>> =
+        flow {
+            try {
+                emit(Response.Loading)
+                val authorization = "OAuth $accessToken"
+                val result = api.getPlaylistById(authorization, id)
+                emit(Response.Success(result))
+            } catch (e: Exception) {
+                Log.d("SoundCloud Search Error", e.message.toString())
+                emit(Response.Error(e.message.toString()))
+            }
+        }
+
+    override suspend fun searchUserById(
+        id: String,
+        accessToken: String
+    ): Flow<Response<Any>> = flow {
         try {
             emit(Response.Loading)
             val authorization = "OAuth $accessToken"
-            val result = api.getTrackById(authorization, id)
+            val result = api.getUserById(authorization, id)
             emit(Response.Success(result))
         } catch (e: Exception) {
             Log.d("SoundCloud Search Error", e.message.toString())
@@ -77,11 +121,17 @@ class SoundCloudRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun searchPlaylistById(id: String, accessToken: String): Flow<Response<Any>> = flow {
+    override suspend fun searchSongsByUser(
+        userId: String,
+        offset: Long,
+        limit: Long,
+        accessToken: String
+    ): Flow<Response<Any>> = flow {
         try {
             emit(Response.Loading)
             val authorization = "OAuth $accessToken"
-            val result = api.getPlaylistById(authorization, id)
+            val access = listOf("playable")
+            val result = api.getTracksByUser(authorization, userId, access, limit, offset, false)
             emit(Response.Success(result))
         } catch (e: Exception) {
             Log.d("SoundCloud Search Error", e.message.toString())
@@ -99,7 +149,12 @@ class SoundCloudRepositoryImpl @Inject constructor(
             return result
         } catch (e: Exception) {
             Log.d("SoundCloud Search Error", e.message.toString())
-            return SoundCloudTrackStreamableUrls("https://api.soundcloud.com/tracks/${id}/stream?client_id=${EnvLoader.soundCloudClientId}", "", "", "")
+            return SoundCloudTrackStreamableUrls(
+                "https://api.soundcloud.com/tracks/${id}/stream?client_id=${EnvLoader.soundCloudClientId}",
+                "",
+                "",
+                ""
+            )
         }
     }
 }

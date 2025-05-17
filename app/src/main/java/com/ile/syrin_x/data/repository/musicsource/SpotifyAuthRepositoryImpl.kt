@@ -51,6 +51,13 @@ class SpotifyAuthRepositoryImpl @Inject constructor(
         return dao.getUserToken(userId)
     }
 
+    override suspend fun deleteSpotifyToken(userId: String) {
+        return withContext(Dispatchers.IO) {
+            dao.deleteUser(userId)
+            GlobalContext.loggedInMusicSources.remove("Spotify")
+        }
+    }
+
     override suspend fun refreshSpotifyAccessToken(userUuid: String, refreshToken: String?) {
         return withContext(Dispatchers.IO) {
             try {

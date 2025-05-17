@@ -13,4 +13,5 @@ interface UserRepository {
     suspend fun changeUserProfile(userId: String, profileImageUrl: String?): Response<UserInfo>
     suspend fun uploadProfileImageAndSet(userId: String, uri: Uri, context: Context): Response<UserInfo>
     suspend fun upgradeUserToPremium(userId: String)
+    suspend fun getUserPremiumStatus(userId: String): Flow<Response<Boolean>>
 }

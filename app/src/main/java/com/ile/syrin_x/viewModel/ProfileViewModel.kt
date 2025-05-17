@@ -10,6 +10,7 @@ import androidx.lifecycle.viewModelScope
 import com.ile.syrin_x.data.model.UserInfo
 import com.ile.syrin_x.data.model.entity.FavoriteArtist
 import com.ile.syrin_x.data.model.entity.PreviouslyPlayedTrack
+import com.ile.syrin_x.data.model.entity.SpotifyUserToken
 import com.ile.syrin_x.data.model.usercreatedplaylist.FavoriteTrack
 import com.ile.syrin_x.domain.core.Response
 import com.ile.syrin_x.domain.usecase.auth.GetUserUidUseCase
@@ -18,10 +19,13 @@ import com.ile.syrin_x.domain.usecase.user.GetAllFavoriteArtistsByUserUseCase
 import com.ile.syrin_x.domain.usecase.user.GetAllFavoriteTracksByUserUseCase
 import com.ile.syrin_x.domain.usecase.user.GetAllPreviouslyPlayedTracksByUserUseCase
 import com.ile.syrin_x.domain.usecase.user.GetUserInfoUseCase
+import com.ile.syrin_x.domain.usecase.user.GetUserPremiumStatusUseCase
 import com.ile.syrin_x.domain.usecase.user.UpdateUserInfoUseCase
 import com.ile.syrin_x.domain.usecase.user.UploadProfileImageUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -34,11 +38,15 @@ class ProfileViewModel  @Inject constructor(
     private val getUserInfoUseCase: GetUserInfoUseCase,
     private val updateUserInfoUseCase: UpdateUserInfoUseCase,
     private val uploadProfileImageUseCase: UploadProfileImageUseCase,
-    private val getUserUidUseCase: GetUserUidUseCase
+    private val getUserUidUseCase: GetUserUidUseCase,
+    private val getUserPremiumStatusUseCase: GetUserPremiumStatusUseCase
     ): ViewModel() {
 
         private val _profileFlow = MutableSharedFlow<Response<Any>>()
         val profileFlow = _profileFlow
+
+        private val _isUserPremium = MutableStateFlow(false)
+        val isUserPremium: StateFlow<Boolean> = _isUserPremium
 
         val userInfo = mutableStateOf(UserInfo("", "", "", ""))
         val userProfileImage = mutableStateOf("")
@@ -48,17 +56,19 @@ class ProfileViewModel  @Inject constructor(
 
     fun getUserInfo() = viewModelScope.launch {
         getUserUidUseCase.invoke().collect { userUid ->
-            combine(getUserInfoUseCase(userUid), getAllFavoriteArtistsByUserUseCase(userUid), getAllFavoriteTracksByUserUseCase(userUid), getAllPreviouslyPlayedTracksByUserUseCase(userUid)) {
-                userInfoResponse, favoriteArtistsResponse, favoriteTracksResponse, previouslyPlayedTracksResponse ->
+            combine(getUserInfoUseCase(userUid), getAllFavoriteArtistsByUserUseCase(userUid), getAllFavoriteTracksByUserUseCase(userUid), getAllPreviouslyPlayedTracksByUserUseCase(userUid), getUserPremiumStatusUseCase(userUid)) {
+                userInfoResponse, favoriteArtistsResponse, favoriteTracksResponse, previouslyPlayedTracksResponse, userPremiumResponse ->
                 when {
                             userInfoResponse is Response.Success<*> &&
                             favoriteTracksResponse is Response.Success<*> &&
                             favoriteArtistsResponse is Response.Success<*> &&
-                                    previouslyPlayedTracksResponse is Response.Success<*> -> {
+                                    previouslyPlayedTracksResponse is Response.Success<*> &&
+                                         userPremiumResponse is Response.Success<*> -> {
                                 val userInfoData = userInfoResponse.data as? UserInfo
                                 val favoriteTracksData = favoriteTracksResponse.data as? List<FavoriteTrack>
                                 val favoriteArtistsData = favoriteArtistsResponse.data as? List<FavoriteArtist>
                                 val previouslyPlayedTracksData = previouslyPlayedTracksResponse.data as? List<PreviouslyPlayedTrack>
+                                val premiumResponse = userPremiumResponse.data as Boolean
 
                                 favoriteTracks.clear()
                                 favoriteArtists.clear()
@@ -67,6 +77,8 @@ class ProfileViewModel  @Inject constructor(
                                 userInfoData?.let {
                                     userInfo.value = userInfoData
                                 }
+
+                                _isUserPremium.value = premiumResponse
 
                                 favoriteTracksData?.let {
                                     favoriteTracksData.forEach {
@@ -97,6 +109,7 @@ class ProfileViewModel  @Inject constructor(
                     favoriteTracksResponse is Response.Error -> favoriteTracksResponse
                     favoriteArtistsResponse is Response.Error -> favoriteArtistsResponse
                     previouslyPlayedTracksResponse is Response.Error -> previouslyPlayedTracksResponse
+                    userPremiumResponse is Response.Error -> userPremiumResponse
                     else -> Response.Loading
                 }
             }.collect { response ->

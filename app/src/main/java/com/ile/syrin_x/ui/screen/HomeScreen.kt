@@ -1,10 +1,8 @@
 package com.ile.syrin_x.ui.screen
 
-import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -16,46 +14,47 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import coil3.compose.AsyncImage
+import com.ile.syrin_x.R
 import com.ile.syrin_x.data.model.deezer.MusicGenre
 import com.ile.syrin_x.domain.core.Response
 import com.ile.syrin_x.ui.screen.common.BottomBarNavigationComponent
 import com.ile.syrin_x.ui.screen.common.HeaderComponent
 import com.ile.syrin_x.ui.screen.common.MyCircularProgress
-import com.ile.syrin_x.viewModel.HeaderViewModel
 import com.ile.syrin_x.viewModel.HomeViewModel
-import kotlinx.coroutines.flow.MutableSharedFlow
 
 @Composable
 fun HomeScreen(
     navHostController: NavHostController,
     homeViewModel: HomeViewModel = hiltViewModel(),
-    headerViewModel: HeaderViewModel = hiltViewModel(),
 ) {
     val homeState by homeViewModel.homeFlow.collectAsState(initial = Response.Loading)
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         topBar = {
-            HeaderComponent(navHostController, headerViewModel)
+            HeaderComponent(navHostController)
         },
         bottomBar = {
             BottomBarNavigationComponent(navHostController)
@@ -115,26 +114,50 @@ fun MusicGenreRow(
     navHostController: NavHostController,
     modifier: Modifier = Modifier,
 ) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
+    Card(
         modifier = modifier
             .fillMaxWidth()
-            .clickable(onClick = { navHostController.navigate("trending_songs_by_genre_screen/${musicGenre.id}") })
-            .padding(8.dp)
-    ) {
-        AsyncImage(
-            model = musicGenre.picture,
-            contentDescription = musicGenre.name,
-            modifier = Modifier
-                .size(56.dp)
-                .clip(RoundedCornerShape(4.dp))
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .clickable {
+                navHostController.navigate("trending_songs_by_genre_screen/${musicGenre.id}")
+            },
+        shape = RoundedCornerShape(12.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
         )
-        Spacer(modifier = Modifier.width(12.dp))
-        Column(modifier = Modifier.weight(1f)) {
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .padding(16.dp)
+        ) {
+            AsyncImage(
+                model = musicGenre.picture,
+                contentDescription = musicGenre.name,
+                contentScale = ContentScale.Crop,
+                placeholder = painterResource(R.drawable.music_note_icon),
+                error = painterResource(R.drawable.music_note_icon),
+                modifier = Modifier
+                    .size(64.dp)
+                    .clip(RoundedCornerShape(8.dp))
+            )
+
+            Spacer(modifier = Modifier.width(16.dp))
+
             Text(
                 text = musicGenre.name,
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 1,
-                style = MaterialTheme.typography.labelMedium
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f)
+            )
+
+            Icon(
+                imageVector = Icons.Default.PlayArrow,
+                contentDescription = "See ${musicGenre.name}",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     }
