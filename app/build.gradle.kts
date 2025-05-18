@@ -120,4 +120,6 @@ dependencies {
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.androidx.foundation)
     implementation(libs.accompanist.pager.indicators)
+    implementation(libs.androidx.core.splashscreen)
+    implementation(libs.androidx.foundation)
 }

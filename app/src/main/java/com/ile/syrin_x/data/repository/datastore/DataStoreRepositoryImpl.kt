@@ -8,6 +8,7 @@ import androidx.datastore.preferences.preferencesDataStore
 import com.ile.syrin_x.domain.repository.DataStoreRepository
 import kotlinx.coroutines.flow.first
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -50,6 +51,26 @@ class DataStoreRepositoryImpl @Inject constructor(
         val preferencesKey = stringPreferencesKey(key)
         return context.dataStore.data.map { prefs ->
             prefs[preferencesKey]
+        }
+    }
+
+    override suspend fun putBoolean(key: String, value: Boolean) {
+        val dataKey = booleanPreferencesKey(key)
+        context.dataStore.edit { prefs ->
+            prefs[dataKey] = value
+        }
+    }
+
+    override suspend fun getBoolean(key: String): Boolean? {
+        val dataKey = booleanPreferencesKey(key)
+        val prefs = context.dataStore.data.first()
+        return prefs[dataKey]
+    }
+
+    override fun getBooleanFlow(key: String): Flow<Boolean?> {
+        val dataKey = booleanPreferencesKey(key)
+        return context.dataStore.data.map { prefs ->
+            prefs[dataKey]
         }
     }
 }

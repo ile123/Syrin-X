@@ -11,6 +11,7 @@ coil = "2.4.0"
 coilCompose = "3.1.0"
 converterGson = "2.9.0"
 coreKtxVersion = "1.16.0"
+coreSplashscreen = "1.0.1"
 datastorePreferences = "1.1.6"
 dotenvKotlin = "6.5.1"
 env = "1.1.0"
@@ -61,6 +62,7 @@ accompanist-permissions-v0360 = { module = "com.google.accompanist:accompanist-p
 androidx-browser = { module = "androidx.browser:browser", version.ref = "browser" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-core-ktx-v1160 = { module = "androidx.core:core-ktx", version.ref = "coreKtxVersion" }
+androidx-core-splashscreen = { module = "androidx.core:core-splashscreen", version.ref = "coreSplashscreen" }
 androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastorePreferences" }
 androidx-foundation = { module = "androidx.compose.foundation:foundation", version.ref = "foundation" }
 androidx-hilt-navigation-compose = { module = "androidx.hilt:hilt-navigation-compose", version.ref = "hiltNavigationCompose" }

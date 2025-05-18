@@ -121,6 +121,7 @@ fun ProfileScreen(
 
             ProfileContent(
                 navHostController = navHostController,
+                profileViewModel,
                 profileFlow = profileViewModel.profileFlow,
                 onError = { msg -> scope.launch { snackbarHostState.showSnackbar(msg) } },
                 userInfo = userInfo,
@@ -150,6 +151,7 @@ fun ProfileScreen(
 @Composable
 private fun ProfileContent(
     navHostController: NavHostController,
+    profileViewModel: ProfileViewModel,
     profileFlow: MutableSharedFlow<Response<Any>>,
     onError: (String) -> Unit,
     userInfo: UserInfo,
@@ -175,7 +177,11 @@ private fun ProfileContent(
                 imagePainter = painter,
                 onChangeProfilePicture = onChangeProfilePicture,
                 isUserPremium = isUserPremium,
-                onGetPremium = { navHostController.navigate(NavigationGraph.PaymentScreen.route) }
+                onGetPremium = { navHostController.navigate(NavigationGraph.PaymentScreen.route) },
+                onRemovePremium = {
+                    profileViewModel.removePremiumFromUser()
+                    navHostController.navigate(NavigationGraph.HomeScreen.route)
+                }
             )
         }
 
@@ -329,7 +335,8 @@ private fun ProfileHeader(
     isUserPremium: Boolean,
     imagePainter: Painter,
     onChangeProfilePicture: () -> Unit,
-    onGetPremium: () -> Unit
+    onGetPremium: () -> Unit,
+    onRemovePremium: () -> Unit
 ) {
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -385,10 +392,11 @@ private fun ProfileHeader(
             )
         } else {
             Text(
-                text = "You are a premium member",
+                text = "Remove Premium",
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Normal,
-                color = MaterialTheme.colorScheme.tertiary
+                color = MaterialTheme.colorScheme.error,
+                modifier = Modifier.clickable { onRemovePremium() }
             )
         }
     }

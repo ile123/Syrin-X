@@ -72,7 +72,11 @@ class UserRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun updateUser(userId: String, userName: String, fullName: String): Flow<Response<UserInfo>> = flow {
+    override suspend fun updateUser(
+        userId: String,
+        userName: String,
+        fullName: String
+    ): Flow<Response<UserInfo>> = flow {
         emit(Response.Loading)
 
         val updateMap = mapOf(
@@ -101,6 +105,7 @@ class UserRepositoryImpl @Inject constructor(
     }.catch { e ->
         emit(Response.Error(e.localizedMessage ?: "Failed to update user"))
     }
+
     override suspend fun getUserInfo(userId: String): Flow<Response<UserInfo>> = flow {
         emit(Response.Loading)
 
@@ -124,7 +129,10 @@ class UserRepositoryImpl @Inject constructor(
         emit(Response.Error(e.localizedMessage ?: "Failed to fetch user"))
     }
 
-    override suspend fun changeUserProfile(userId: String, profileImageUrl: String?): Response<UserInfo> {
+    override suspend fun changeUserProfile(
+        userId: String,
+        profileImageUrl: String?
+    ): Response<UserInfo> {
         return try {
             if (profileImageUrl.isNullOrBlank()) {
                 return Response.Error("Profile image URL is empty")
@@ -192,6 +200,25 @@ class UserRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun removeUserPremiumPlan(userId: String) {
+        val updateMap = mapOf(
+            "premium" to false,
+        )
+
+        val usersRef = db.reference.child("users").child(userId)
+
+        suspendCoroutine { continuation ->
+            usersRef.updateChildren(updateMap)
+                .addOnCompleteListener { task ->
+                    if (task.isSuccessful) continuation.resume(Unit)
+                    else continuation.resumeWithException(Exception("Failed to update user"))
+                }
+                .addOnFailureListener { e ->
+                    continuation.resumeWithException(e)
+                }
+        }
+    }
+
     override suspend fun getUserPremiumStatus(userId: String): Flow<Response<Boolean>> = flow {
         emit(Response.Loading)
 
@@ -210,7 +237,6 @@ class UserRepositoryImpl @Inject constructor(
         } else {
             emit(Response.Error("User not found"))
         }
-
 
 
     }.catch { e ->

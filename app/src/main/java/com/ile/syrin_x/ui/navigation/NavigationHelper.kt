@@ -1,6 +1,8 @@
 package com.ile.syrin_x.ui.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
@@ -17,6 +19,7 @@ import com.ile.syrin_x.ui.screen.HomeScreen
 import com.ile.syrin_x.ui.screen.LoginScreen
 import com.ile.syrin_x.ui.screen.MusicSourceScreen
 import com.ile.syrin_x.ui.screen.NewReleaseNotificationScreen
+import com.ile.syrin_x.ui.screen.OnboardingScreen
 import com.ile.syrin_x.ui.screen.PaymentScreen
 import com.ile.syrin_x.ui.screen.PlaylistDetailsScreen
 import com.ile.syrin_x.ui.screen.ProfileScreen
@@ -28,6 +31,7 @@ import com.ile.syrin_x.ui.screen.TrackDetailsScreen
 import com.ile.syrin_x.ui.screen.TrendingSongsByGenreScreen
 import com.ile.syrin_x.ui.screen.UserCreatedPlaylistsScreen
 import com.ile.syrin_x.ui.screen.UserCreatedPlaylistDetailsScreen
+import com.ile.syrin_x.viewModel.OnboardingViewModel
 import com.ile.syrin_x.viewModel.PlayerViewModel
 import com.ile.syrin_x.viewModel.SearchViewModel
 
@@ -36,14 +40,23 @@ fun SetUpNavigationGraph(
     playerViewModel: PlayerViewModel,
     navHostController: NavHostController = rememberNavController(),
     authenticationNavigationViewModel: AuthenticationNavigationViewModel = hiltViewModel(),
+    onboardingViewModel: OnboardingViewModel = hiltViewModel()
 ) {
+
+    val isLoggedIn = authenticationNavigationViewModel.isLoggedInState.value
+    val hasSeenOnboarding by onboardingViewModel
+        .hasSeenOnboarding
+        .collectAsState(initial = false)
 
     NavHost(
         navController = navHostController,
-        startDestination = if (authenticationNavigationViewModel.isLoggedInState.value)
+        startDestination = if (!hasSeenOnboarding) {
+            NavigationGraph.OnboardingScreen.route
+        } else if (isLoggedIn) {
             NavigationGraph.LoginScreen.route
-        else
+        } else {
             NavigationGraph.HomeScreen.route
+        }
     ) {
         composable(
             route = NavigationGraph.HomeScreen.route
@@ -59,6 +72,23 @@ fun SetUpNavigationGraph(
             route = NavigationGraph.RegisterScreen.route
         ) {
             RegisterScreen(navHostController)
+        }
+        composable(NavigationGraph.OnboardingScreen.route) {
+            OnboardingScreen(
+                navHostController,
+                viewModel = hiltViewModel(),
+                onFinished = {
+                    onboardingViewModel.markOnboardingShown()
+                    val next = if (isLoggedIn)
+                        NavigationGraph.LoginScreen.route
+                    else
+                        NavigationGraph.HomeScreen.route
+
+                    navHostController.navigate(next) {
+                        popUpTo(NavigationGraph.OnboardingScreen.route) { inclusive = true }
+                    }
+                },
+            )
         }
         composable(
             route = NavigationGraph.MusicSourceScreen.route
@@ -78,7 +108,11 @@ fun SetUpNavigationGraph(
             )
         ) {
             val userCreatedPlaylistId = it.arguments?.getString("userCreatedPlaylistId")
-            UserCreatedPlaylistDetailsScreen(playerViewModel, navHostController, userCreatedPlaylistId)
+            UserCreatedPlaylistDetailsScreen(
+                playerViewModel,
+                navHostController,
+                userCreatedPlaylistId
+            )
         }
 
         navigation(
