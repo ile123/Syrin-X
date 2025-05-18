@@ -127,18 +127,21 @@ class NewReleaseMonitorService : Service() {
                                         "NewReleaseMonitorService",
                                         "Track ${track.title} has been released."
                                     )
-                                    val notification = NewReleaseNotificationEntity(
-                                        id = UUID.randomUUID().toString(),
-                                        userId = userId,
-                                        artistId = artistId,
-                                        title = "${fav.name} – ${track.title}",
-                                        timestamp = Instant.now().toEpochMilli(),
-                                        seen = false
-                                    )
-                                    notificationDao.insert(notification)
-                                    firebaseDb
-                                        .getReference("users/$userId/newReleasesNotifications/${notification.id}")
-                                        .setValue(notification)
+                                    val existing = notificationDao.getExistingNotification(track.title, artistId.toString())
+                                    if (existing == null) {
+                                        val notification = NewReleaseNotificationEntity(
+                                            id = UUID.randomUUID().toString(),
+                                            userId = userId,
+                                            artistId = artistId,
+                                            title = "${fav.name} – ${track.title}",
+                                            timestamp = Instant.now().toEpochMilli(),
+                                            seen = false
+                                        )
+                                        notificationDao.insert(notification)
+                                        firebaseDb
+                                            .getReference("users/$userId/newReleasesNotifications/${notification.id}")
+                                            .setValue(notification)
+                                    }
                                 }
                             }
 

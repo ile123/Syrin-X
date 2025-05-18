@@ -20,6 +20,7 @@ import com.ile.syrin_x.domain.usecase.user.GetAllFavoriteTracksByUserUseCase
 import com.ile.syrin_x.domain.usecase.user.GetAllPreviouslyPlayedTracksByUserUseCase
 import com.ile.syrin_x.domain.usecase.user.GetUserInfoUseCase
 import com.ile.syrin_x.domain.usecase.user.GetUserPremiumStatusUseCase
+import com.ile.syrin_x.domain.usecase.user.RemovePremiumFromUserUseCase
 import com.ile.syrin_x.domain.usecase.user.UpdateUserInfoUseCase
 import com.ile.syrin_x.domain.usecase.user.UploadProfileImageUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -39,7 +40,8 @@ class ProfileViewModel  @Inject constructor(
     private val updateUserInfoUseCase: UpdateUserInfoUseCase,
     private val uploadProfileImageUseCase: UploadProfileImageUseCase,
     private val getUserUidUseCase: GetUserUidUseCase,
-    private val getUserPremiumStatusUseCase: GetUserPremiumStatusUseCase
+    private val getUserPremiumStatusUseCase: GetUserPremiumStatusUseCase,
+    private val removePremiumFromUserUseCase: RemovePremiumFromUserUseCase
     ): ViewModel() {
 
         private val _profileFlow = MutableSharedFlow<Response<Any>>()
@@ -151,6 +153,13 @@ class ProfileViewModel  @Inject constructor(
                     }
                 }
             }
+        }
+    }
+
+    fun removePremiumFromUser() = viewModelScope.launch {
+        getUserUidUseCase.invoke().collect { userUid ->
+            removePremiumFromUserUseCase(userUid)
+
         }
     }
 }

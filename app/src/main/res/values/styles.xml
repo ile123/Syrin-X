@@ -4,4 +4,10 @@
         <item name="android:background">@color/gray_400</item>
         <item name="exampleColor">@color/light_blue_400</item>
     </style>
+    <style name="Theme.App.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/design_default_color_background</item>
+        <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_parrot_app_icon_rounded</item>
+        <item name="windowSplashScreenAnimationDuration">200</item>
+        <item name="postSplashScreenTheme">@style/Theme.SyrinX</item>
+    </style>
 </resources>
