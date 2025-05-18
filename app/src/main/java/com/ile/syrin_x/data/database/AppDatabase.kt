@@ -6,6 +6,7 @@ import androidx.room.TypeConverters
 import com.ile.syrin_x.data.converters.Converters
 import com.ile.syrin_x.data.model.entity.FavoriteArtistEntity
 import com.ile.syrin_x.data.model.entity.FavoriteTrackEntity
+import com.ile.syrin_x.data.model.entity.NewReleaseNotificationEntity
 import com.ile.syrin_x.data.model.entity.PreviouslyPlayedTrackEntity
 import com.ile.syrin_x.data.model.entity.SpotifyUserToken
 import com.ile.syrin_x.data.model.entity.SoundCloudUserToken
@@ -20,9 +21,10 @@ import com.ile.syrin_x.data.model.entity.UserCreatedPlaylistTrackEntity
         UserCreatedPlaylistEntity::class,
         UserCreatedPlaylistTrackEntity::class,
         PreviouslyPlayedTrackEntity::class,
-        FavoriteArtistEntity::class
+        FavoriteArtistEntity::class,
+        NewReleaseNotificationEntity::class
     ],
-    version = 2
+    version = 3
 )
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
@@ -33,4 +35,5 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun favoriteTrackDao(): FavoriteTrackDao
     abstract fun previouslyPlayedTrackDao(): PreviouslyPlayedTrackDao
     abstract fun favoriteArtistDao(): FavoriteArtistDao
+    abstract fun newReleasesNotificationDao(): NewReleaseNotificationDao
 }

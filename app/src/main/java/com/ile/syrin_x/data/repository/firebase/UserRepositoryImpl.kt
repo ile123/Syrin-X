@@ -5,25 +5,33 @@ import android.net.Uri
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.storage.FirebaseStorage
+import com.ile.syrin_x.data.database.FavoriteArtistDao
+import com.ile.syrin_x.data.database.NewReleaseNotificationDao
 import com.ile.syrin_x.data.model.UserInfo
+import com.ile.syrin_x.data.model.entity.FavoriteArtist
+import com.ile.syrin_x.data.model.entity.NewReleaseNotificationEntity
 import com.ile.syrin_x.domain.core.Response
 import com.ile.syrin_x.domain.repository.UserRepository
 import jakarta.inject.Inject
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.filterNot
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withContext
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
 
 class UserRepositoryImpl @Inject constructor(
     private val db: FirebaseDatabase,
-    private val storage: FirebaseStorage
+    private val storage: FirebaseStorage,
+    private val newReleaseNotificationDao: NewReleaseNotificationDao
 ) : UserRepository {
 
     override suspend fun saveUser(
@@ -207,6 +215,23 @@ class UserRepositoryImpl @Inject constructor(
 
     }.catch { e ->
         emit(Response.Error(e.localizedMessage ?: "Failed to fetch user"))
+    }
+
+    override suspend fun getAllUsersNotifications(
+        userId: String
+    ): Flow<Response<List<NewReleaseNotificationEntity>>> = flow {
+        emit(Response.Loading)
+        val usersNotifications = withContext(Dispatchers.IO) {
+            newReleaseNotificationDao.getAllForUser(userId)
+        }
+        emit(Response.Success(usersNotifications))
+    }
+
+    override suspend fun markNotificationAsSeen(userId: String, notificationId: String) {
+        newReleaseNotificationDao.markSeen(notificationId)
+        db
+            .getReference("users/$userId/newReleasesNotifications/$notificationId/seen")
+            .setValue(true)
     }
 
     private fun parseUserInfo(data: Map<*, *>): UserInfo {

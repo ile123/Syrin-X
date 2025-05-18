@@ -24,7 +24,7 @@ fun MyAlertDialog(
                 text = title,
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.primary
+                color = MaterialTheme.colorScheme.onError
             )
         },
         text = {
@@ -32,7 +32,7 @@ fun MyAlertDialog(
                 text = text,
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Normal,
-                color = MaterialTheme.colorScheme.primary
+                color = MaterialTheme.colorScheme.onError
             )
         },
         onDismissRequest = { onDismissRequest() },
@@ -44,7 +44,7 @@ fun MyAlertDialog(
                     confirmButtonText,
                     style = MaterialTheme.typography.labelLarge,
                     fontWeight = FontWeight.Thin,
-                    color = MaterialTheme.colorScheme.primary
+                    color = MaterialTheme.colorScheme.onError
                 )
             }
         },
@@ -56,11 +56,11 @@ fun MyAlertDialog(
                     dismissButtonText,
                     style = MaterialTheme.typography.labelLarge,
                     fontWeight = FontWeight.Thin,
-                    color = MaterialTheme.colorScheme.primary
+                    color = MaterialTheme.colorScheme.onError
                 )
             }
         },
-        containerColor = MaterialTheme.colorScheme.primaryContainer,
+        containerColor = MaterialTheme.colorScheme.errorContainer,
         properties = DialogProperties(
             dismissOnBackPress = cancelable,
             dismissOnClickOutside = cancelable,

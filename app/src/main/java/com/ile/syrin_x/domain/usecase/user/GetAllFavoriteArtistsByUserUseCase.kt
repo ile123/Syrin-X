@@ -6,5 +6,5 @@ import javax.inject.Inject
 class GetAllFavoriteArtistsByUserUseCase @Inject constructor(
     private val favoriteArtistsRepository: FavoriteArtistRepository
 ) {
-    suspend operator fun invoke(userId: String) = favoriteArtistsRepository.getAllFavoriteArtistsByUser(userId)
+    suspend operator fun invoke(userId: String) = favoriteArtistsRepository.getAllUsersFavoriteArtists(userId)
 }

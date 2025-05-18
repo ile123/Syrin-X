@@ -383,6 +383,13 @@ private fun ProfileHeader(
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.clickable { onGetPremium() }
             )
+        } else {
+            Text(
+                text = "You are a premium member",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Normal,
+                color = MaterialTheme.colorScheme.tertiary
+            )
         }
     }
 

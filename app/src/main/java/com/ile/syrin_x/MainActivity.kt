@@ -20,6 +20,7 @@ import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ile.syrin_x.domain.repository.DataStoreRepository
+import com.ile.syrin_x.service.NewReleaseMonitorService
 import com.ile.syrin_x.service.TokenMonitorService
 import com.ile.syrin_x.ui.navigation.SetUpNavigationGraph
 import com.ile.syrin_x.ui.screen.player.PlayerScaffold
@@ -78,6 +79,7 @@ class MainActivity : ComponentActivity() {
         stripeInitializer.initialize()
         handleDeepLink(intent?.data)
         startTokenMonitorService()
+        startNewReleasesMonitorService()
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -132,6 +134,11 @@ class MainActivity : ComponentActivity() {
 
     private fun startTokenMonitorService() {
         val intent = Intent(this, TokenMonitorService::class.java)
+        ContextCompat.startForegroundService(this, intent)
+    }
+
+    private fun startNewReleasesMonitorService() {
+        val intent = Intent(this, NewReleaseMonitorService::class.java)
         ContextCompat.startForegroundService(this, intent)
     }
 }

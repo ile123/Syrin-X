@@ -16,6 +16,7 @@ import com.ile.syrin_x.ui.screen.ArtistDetailsScreen
 import com.ile.syrin_x.ui.screen.HomeScreen
 import com.ile.syrin_x.ui.screen.LoginScreen
 import com.ile.syrin_x.ui.screen.MusicSourceScreen
+import com.ile.syrin_x.ui.screen.NewReleaseNotificationScreen
 import com.ile.syrin_x.ui.screen.PaymentScreen
 import com.ile.syrin_x.ui.screen.PlaylistDetailsScreen
 import com.ile.syrin_x.ui.screen.ProfileScreen
@@ -198,6 +199,11 @@ fun SetUpNavigationGraph(
             route = NavigationGraph.SettingsScreen.route
         ) {
             SettingsScreen(navHostController)
+        }
+        composable(
+            route = NavigationGraph.NewReleaseNotificationScreen.route
+        ) {
+            NewReleaseNotificationScreen(navHostController)
         }
     }
 }
