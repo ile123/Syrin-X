@@ -127,11 +127,14 @@ class NewReleaseMonitorService : Service() {
                                         "NewReleaseMonitorService",
                                         "Track ${track.title} has been released."
                                     )
-                                    val existing = notificationDao.getExistingNotification(track.title, artistId.toString())
+                                    val existing = notificationDao.getExistingNotification(
+                                        track.title,
+                                        artistId
+                                    )
                                     if (existing == null) {
                                         val notification = NewReleaseNotificationEntity(
-                                            id = UUID.randomUUID().toString(),
                                             userId = userId,
+                                            trackId = track.id,
                                             artistId = artistId,
                                             title = "${fav.name} – ${track.title}",
                                             timestamp = Instant.now().toEpochMilli(),
@@ -139,7 +142,7 @@ class NewReleaseMonitorService : Service() {
                                         )
                                         notificationDao.insert(notification)
                                         firebaseDb
-                                            .getReference("users/$userId/newReleasesNotifications/${notification.id}")
+                                            .getReference("users/$userId/newReleasesNotifications/${notification.trackId}")
                                             .setValue(notification)
                                     }
                                 }

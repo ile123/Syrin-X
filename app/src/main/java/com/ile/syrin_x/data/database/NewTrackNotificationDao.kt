@@ -9,18 +9,15 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface NewReleaseNotificationDao {
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insert(notification: NewReleaseNotificationEntity)
 
-    @Query("SELECT * FROM new_releases WHERE title = :title AND artistId = :artistId LIMIT 1")
-    suspend fun getExistingNotification(
-        title: String,
-        artistId: String
-    ): NewReleaseNotificationEntity?
+    @Query("SELECT * FROM new_releases WHERE userId = :userId AND trackId = :trackId LIMIT 1")
+    suspend fun getExistingNotification(userId: String, trackId: Long): NewReleaseNotificationEntity?
 
     @Query("SELECT * FROM new_releases WHERE userId = :userId ORDER BY timestamp DESC")
-    fun getAllForUser(userId: String): List<NewReleaseNotificationEntity>
+    fun getAllForUser(userId: String): Flow<List<NewReleaseNotificationEntity>>
 
-    @Query("UPDATE new_releases SET seen = 1 WHERE id = :notificationId")
-    suspend fun markSeen(notificationId: String)
+    @Query("UPDATE new_releases SET seen = 1 WHERE userId = :userId AND trackId = :trackId")
+    suspend fun markSeen(userId: String, trackId: Long)
 }

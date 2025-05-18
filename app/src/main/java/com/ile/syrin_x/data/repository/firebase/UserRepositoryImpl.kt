@@ -5,10 +5,8 @@ import android.net.Uri
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.storage.FirebaseStorage
-import com.ile.syrin_x.data.database.FavoriteArtistDao
 import com.ile.syrin_x.data.database.NewReleaseNotificationDao
 import com.ile.syrin_x.data.model.UserInfo
-import com.ile.syrin_x.data.model.entity.FavoriteArtist
 import com.ile.syrin_x.data.model.entity.NewReleaseNotificationEntity
 import com.ile.syrin_x.domain.core.Response
 import com.ile.syrin_x.domain.repository.UserRepository
@@ -20,10 +18,11 @@ import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.filterNot
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.tasks.await
-import kotlinx.coroutines.withContext
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
@@ -245,18 +244,22 @@ class UserRepositoryImpl @Inject constructor(
 
     override suspend fun getAllUsersNotifications(
         userId: String
-    ): Flow<Response<List<NewReleaseNotificationEntity>>> = flow {
-        emit(Response.Loading)
-        val usersNotifications = withContext(Dispatchers.IO) {
-            newReleaseNotificationDao.getAllForUser(userId)
-        }
-        emit(Response.Success(usersNotifications))
-    }
+    ): Flow<Response<List<NewReleaseNotificationEntity>>> =
+        newReleaseNotificationDao.getAllForUser(userId)
+            .map<List<NewReleaseNotificationEntity>, Response<List<NewReleaseNotificationEntity>>> { list ->
+                Response.Success(list)
+            }
+            .onStart {
+                emit(Response.Loading)
+            }
+            .flowOn(Dispatchers.IO)
 
-    override suspend fun markNotificationAsSeen(userId: String, notificationId: String) {
-        newReleaseNotificationDao.markSeen(notificationId)
-        db
-            .getReference("users/$userId/newReleasesNotifications/$notificationId/seen")
+    override suspend fun markNotificationAsSeen(
+        userId: String,
+        trackId: Long
+    ) {
+        newReleaseNotificationDao.markSeen(userId, trackId)
+        db.getReference("users/$userId/newReleasesNotifications/$trackId/seen")
             .setValue(true)
     }
 

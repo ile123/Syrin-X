@@ -51,8 +51,8 @@ class NewReleaseNotificationViewModel @Inject constructor(
         }
     }
 
-    fun markAsSeen(notificationId: String) = viewModelScope.launch {
+    fun markAsSeen(trackId: Long) = viewModelScope.launch {
         val userId = getUserUidUseCase().firstOrNull() ?: return@launch
-        markUserNotificationAsSeenUseCase(notificationId, userId)
+        markUserNotificationAsSeenUseCase(userId, trackId)
     }
 }

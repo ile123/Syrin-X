@@ -18,5 +18,5 @@ interface UserRepository {
     suspend fun removeUserPremiumPlan(userId: String)
     suspend fun getUserPremiumStatus(userId: String): Flow<Response<Boolean>>
     suspend fun getAllUsersNotifications(userId: String): Flow<Response<List<NewReleaseNotificationEntity>>>
-    suspend fun markNotificationAsSeen(userId: String, notificationId: String)
+    suspend fun markNotificationAsSeen(userId: String, trackId: Long)
 }

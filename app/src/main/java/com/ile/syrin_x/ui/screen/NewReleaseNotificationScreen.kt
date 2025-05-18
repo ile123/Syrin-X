@@ -78,10 +78,10 @@ fun NewReleaseNotificationScreen(
                 }
             }
 
-            items(notifications, key = { it.id }) { notification ->
+            items(notifications, key = { "${it.artistId}-${it.trackId}" }) { notification ->
                 NotificationRow(
                     notification = notification,
-                    onClick = { viewModel.markAsSeen(notification.id) }
+                    onClick = { viewModel.markAsSeen(notification.trackId) }
                 )
             }
         }

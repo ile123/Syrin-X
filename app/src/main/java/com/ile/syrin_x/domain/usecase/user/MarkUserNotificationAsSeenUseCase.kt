@@ -11,6 +11,6 @@ class MarkUserNotificationAsSeenUseCase @Inject constructor(
 ) {
     suspend operator fun invoke(
         userId: String,
-        notificationId: String
-    ) = userRepository.markNotificationAsSeen(userId, notificationId)
+        trackId: Long
+    ) = userRepository.markNotificationAsSeen(userId, trackId)
 }
