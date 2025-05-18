@@ -68,6 +68,11 @@
             android:exported="false"
             android:enabled="true"
             android:foregroundServiceType="mediaPlayback" />
+        <service
+            android:name=".service.NewReleaseMonitorService"
+            android:exported="false"
+            android:enabled="true"
+            android:foregroundServiceType="specialUse"/>
 
         <provider
             android:name="androidx.core.content.FileProvider"

@@ -5,6 +5,7 @@ import androidx.room.Room
 import com.ile.syrin_x.data.database.AppDatabase
 import com.ile.syrin_x.data.database.FavoriteArtistDao
 import com.ile.syrin_x.data.database.FavoriteTrackDao
+import com.ile.syrin_x.data.database.NewReleaseNotificationDao
 import com.ile.syrin_x.data.database.PreviouslyPlayedTrackDao
 import com.ile.syrin_x.data.database.SoundCloudDao
 import com.ile.syrin_x.data.database.SpotifyDao
@@ -61,4 +62,8 @@ object DatabaseModule {
     @Provides
     @Singleton
     fun providesFavoriteArtistDao(db: AppDatabase): FavoriteArtistDao = db.favoriteArtistDao()
+
+    @Provides
+    @Singleton
+    fun providesNewReleaseNotificationDao(db: AppDatabase): NewReleaseNotificationDao = db.newReleasesNotificationDao()
 }

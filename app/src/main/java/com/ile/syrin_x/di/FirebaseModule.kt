@@ -3,6 +3,8 @@ package com.ile.syrin_x.di
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.storage.FirebaseStorage
+import com.ile.syrin_x.data.database.FavoriteArtistDao
+import com.ile.syrin_x.data.database.NewReleaseNotificationDao
 import com.ile.syrin_x.data.repository.firebase.AuthenticationRepositoryImpl
 import com.ile.syrin_x.data.repository.firebase.UserRepositoryImpl
 import com.ile.syrin_x.domain.repository.AuthenticationRepository
@@ -39,6 +41,7 @@ object FirebaseModule {
     @Singleton
     fun provideUserRepository(
         db: FirebaseDatabase,
-        storage: FirebaseStorage
-    ): UserRepository = UserRepositoryImpl(db, storage)
+        storage: FirebaseStorage,
+        newReleaseNotificationDao: NewReleaseNotificationDao
+    ): UserRepository = UserRepositoryImpl(db, storage, newReleaseNotificationDao)
 }

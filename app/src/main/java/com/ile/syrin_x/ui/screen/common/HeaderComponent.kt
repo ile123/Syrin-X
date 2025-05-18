@@ -13,6 +13,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import com.ile.syrin_x.ui.icon.LogoutIcon
+import com.ile.syrin_x.ui.icon.NotificationIcon
 import com.ile.syrin_x.ui.icon.SettingIcon
 import com.ile.syrin_x.ui.navigation.NavigationGraph
 import com.ile.syrin_x.utils.GlobalContext
@@ -49,6 +50,15 @@ fun HeaderComponent(
         colors = TopAppBarDefaults
             .topAppBarColors(containerColor = MaterialTheme.colorScheme.primary),
         actions = {
+            IconButton(onClick = { navHostController.navigate(NavigationGraph.NewReleaseNotificationScreen.route) }) {
+                Icon(
+                    NotificationIcon,
+                    contentDescription = "Notification",
+                    tint = MaterialTheme.colorScheme.surface,
+                    modifier = Modifier.padding(top = 16.dp)
+                )
+            }
+
             IconButton(onClick = { navHostController.navigate(NavigationGraph.SearchScreen.route) }) {
                 Icon(
                     Icons.Filled.Search,

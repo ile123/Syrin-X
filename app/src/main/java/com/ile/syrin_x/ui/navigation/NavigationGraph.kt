@@ -18,4 +18,5 @@ sealed class NavigationGraph(val route: String) {
     data object PaymentScreen: NavigationGraph(route = "payment_screen")
     data object TrendingSongsByGenreScreen: NavigationGraph(route = "trending_songs_by_genre_screen")
     data object SettingsScreen: NavigationGraph(route = "settings_screen")
+    data object NewReleaseNotificationScreen: NavigationGraph(route = "new_release_notification_screen")
 }
