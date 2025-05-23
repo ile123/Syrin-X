@@ -41,7 +41,6 @@
 ## Optional Features
 - **Offline Mode**: Download songs for offline listening (available only for Premium users and if the music source allows it). Available only for Premium users.
 - **Personalized Playlists**: This feature is optional and can be implemented if not too complex.
-- **Local Storage**: Storing downloaded songs and favorites locally is optional.
 - **Song Preview**: Listen to song previews. (Snippet of song is played)
 
 ## IMPORTANT
