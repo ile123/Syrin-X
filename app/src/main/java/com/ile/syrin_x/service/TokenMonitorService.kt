@@ -85,11 +85,12 @@ class TokenMonitorService : Service() {
 
         getSpotifyTokenUseCase(userUuid)?.let { token ->
             val nowSec = System.currentTimeMillis() / 1000
-            if (nowSec >= token.expiresAt - 60) {  // within 60s of expiry
+            if (nowSec >= token.expiresAt - 60) {
                 Log.d("TokenMonitorService", "Refreshing Spotify token for $userUuid")
                 refreshSpotifyAccessToken(userUuid, token.refreshToken)
-                GlobalContext.loggedInMusicSources.addIfMissing("Spotify")
             }
+            GlobalContext.Tokens.spotifyToken = token.accessToken
+            GlobalContext.loggedInMusicSources.addIfMissing("Spotify")
         }
 
         getSoundCloudTokenUseCase(userUuid)?.let { token ->
@@ -97,8 +98,9 @@ class TokenMonitorService : Service() {
             if (nowSec >= token.expiresAt - 60) {
                 Log.d("TokenMonitorService", "Refreshing SoundCloud token for $userUuid")
                 refreshSoundcloudAccessToken(userUuid, token.refreshToken)
-                GlobalContext.loggedInMusicSources.addIfMissing("SoundCloud")
             }
+            GlobalContext.Tokens.soundCloudToken = token.accessToken
+            GlobalContext.loggedInMusicSources.addIfMissing("SoundCloud")
         }
     }
 
