@@ -101,12 +101,16 @@ class TokenMonitorService : Service() {
 
         if(spotifyToken != null) {
             refreshSpotifyAccessToken(userUuid, spotifyToken.refreshToken)
-            GlobalContext.loggedInMusicSources.add("Spotify")
+            if(GlobalContext.loggedInMusicSources.find { x -> x == "Spotify" } == null) {
+                GlobalContext.loggedInMusicSources.add("Spotify")
+            }
             Log.d("TokenMonitorService", "Spotify token refreshed.")
         }
         if(soundCloudToken != null) {
             refreshSoundcloudAccessToken(userUuid, soundCloudToken.refreshToken)
-            GlobalContext.loggedInMusicSources.add("SoundCloud")
+            if(GlobalContext.loggedInMusicSources.find { x -> x == "SoundCloud" } == null) {
+                GlobalContext.loggedInMusicSources.add("SoundCloud")
+            }
             Log.d("TokenMonitorService", "SoundCloud token refreshed.")
         }
     }

@@ -43,7 +43,7 @@ class SoundCloudAuthRepositoryImpl @Inject constructor(
                             dao.insertToken(soundCloudUserToken)
                             Log.d("SoundCloud Login", "SoundCloud token saved.")
                             GlobalContext.Tokens.soundCloudToken = result.accessToken
-                            if(GlobalContext.loggedInMusicSources.find { x -> x === "SoundCloud" } == null) {
+                            if(GlobalContext.loggedInMusicSources.find { x -> x == "SoundCloud" } == null) {
                                 GlobalContext.loggedInMusicSources.add("SoundCloud")
                             }
                             return@withContext soundCloudUserToken
