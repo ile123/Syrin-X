@@ -16,9 +16,14 @@ import javax.inject.Named
 class SpotifyAuthRepositoryImpl @Inject constructor(
     @Named("AccountApi") private val api: SpotifyAuthApi,
     private val dao: SpotifyDao
-): SpotifyAuthRepository {
+) : SpotifyAuthRepository {
 
-    override suspend fun getToken(userUuid: String, authorization: String, code: String, redirectUri: String): SpotifyUserToken? {
+    override suspend fun getToken(
+        userUuid: String,
+        authorization: String,
+        code: String,
+        redirectUri: String
+    ): SpotifyUserToken? {
         return withContext(Dispatchers.IO) {
             try {
                 if (getSpotifyToken(userUuid) == null) {
@@ -26,16 +31,19 @@ class SpotifyAuthRepositoryImpl @Inject constructor(
                         api.getToken(authorization, "authorization_code", code, redirectUri)
                     if (response.isSuccessful) {
                         response.body()?.let { token ->
+                            val nowSec = System.currentTimeMillis() / 1000
+                            val expiresAt = nowSec + token.expiresIn
+
                             val spotifyAuthToken = SpotifyUserToken(
                                 userUuid,
                                 token.accessToken,
                                 token.refreshToken,
-                                token.expiresIn
+                                expiresAt
                             )
                             dao.insertToken(spotifyAuthToken)
                             Log.d("Spotify Login", "Spotify token saved.")
                             GlobalContext.Tokens.spotifyToken = token.accessToken
-                            if(GlobalContext.loggedInMusicSources.find { x -> x == "Spotify" } == null) {
+                            if (GlobalContext.loggedInMusicSources.find { x -> x == "Spotify" } == null) {
                                 GlobalContext.loggedInMusicSources.add("Spotify")
                             }
                             return@withContext spotifyAuthToken
@@ -63,18 +71,24 @@ class SpotifyAuthRepositoryImpl @Inject constructor(
     override suspend fun refreshSpotifyAccessToken(userUuid: String, refreshToken: String?) {
         return withContext(Dispatchers.IO) {
             try {
-                    val credentials = createBae64CredentialsForAuthorizationFlow(EnvLoader.spotifyClientId, EnvLoader.spotifyClientSecret)
-                    val response = api.refreshToken(credentials,"refresh_token", refreshToken)
-                    if (response.isSuccessful) {
-                        response.body()?.let { token ->
-                            dao.updateToken(userUuid, token.accessToken, token.expiresIn)
-                            Log.d("Spotify Token Refresh", "SoundCloud token was refreshed and saved.")
-                            GlobalContext.Tokens.spotifyToken = token.accessToken
-                        }
+                val credentials = createBae64CredentialsForAuthorizationFlow(
+                    EnvLoader.spotifyClientId,
+                    EnvLoader.spotifyClientSecret
+                )
+                val response = api.refreshToken(credentials, "refresh_token", refreshToken)
+                if (response.isSuccessful) {
+                    response.body()?.let { token ->
+                        val nowSec = System.currentTimeMillis() / 1000
+                        val expiresAt = nowSec + token.expiresIn
+
+                        dao.updateToken(userUuid, token.accessToken, expiresAt)
+                        Log.d("Spotify Token Refresh", "SoundCloud token was refreshed and saved.")
+                        GlobalContext.Tokens.spotifyToken = token.accessToken
+                    }
                 }
             } catch (e: Exception) {
                 Log.d("Spotify Login Error", e.message.toString())
             }
         }
-        }
     }
+}

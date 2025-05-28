@@ -34,11 +34,14 @@ class SoundCloudAuthRepositoryImpl @Inject constructor(
                     )
                     if (response.isSuccessful) {
                         response.body()?.let { result ->
+                            val nowSec = System.currentTimeMillis() / 1000
+                            val expiresAt = nowSec + result.expiresIn
+
                             val soundCloudUserToken = SoundCloudUserToken(
                                 userUuid,
                                 result.accessToken,
                                 result.refreshToken,
-                                result.expiresIn
+                                expiresAt
                             )
                             dao.insertToken(soundCloudUserToken)
                             Log.d("SoundCloud Login", "SoundCloud token saved.")
@@ -77,7 +80,10 @@ class SoundCloudAuthRepositoryImpl @Inject constructor(
                     val response = api.refreshToken("refresh_token", refreshToken, EnvLoader.soundCloudClientId, EnvLoader.soundCloudClientSecret)
                     if (response.isSuccessful) {
                         response.body()?.let { result ->
-                            dao.updateToken(userUuid, result.accessToken, result.refreshToken, result.expiresIn)
+                            val nowSec = System.currentTimeMillis() / 1000
+                            val expiresAt = nowSec + result.expiresIn
+
+                            dao.updateToken(userUuid, result.accessToken, result.refreshToken, expiresAt)
                             Log.d("SoundCloud Token Refresh", "SoundCloud token was refreshed and saved.")
                             GlobalContext.Tokens.soundCloudToken = result.accessToken
                         }

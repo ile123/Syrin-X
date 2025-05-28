@@ -1,12 +1,10 @@
 package com.ile.syrin_x.service
 
-import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import dagger.hilt.android.AndroidEntryPoint
 import android.app.Service
 import android.content.Intent
-import android.os.Build
 import android.os.IBinder
 import android.util.Log
 import androidx.core.app.NotificationCompat
@@ -44,8 +42,6 @@ class TokenMonitorService : Service() {
     lateinit var refreshSoundcloudAccessToken: RefreshSoundcloudAccessToken
 
     private val serviceScope = CoroutineScope(Dispatchers.IO)
-    private var counter = 0
-    private val refreshThreshold = 3600
 
     override fun onCreate() {
         super.onCreate()
@@ -55,63 +51,54 @@ class TokenMonitorService : Service() {
     }
 
     private fun startForegroundService() {
-        val notification = createNotification()
-        startForeground(1, notification)
-        Log.d("TokenMonitorService", "Foreground service started.")
-    }
-
-    private fun createNotification(): Notification {
         val channelId = "token_monitor_channel"
         val channelName = "Token Monitor Service"
-
         val channel = NotificationChannel(channelId, channelName, NotificationManager.IMPORTANCE_LOW)
-        getSystemService(NotificationManager::class.java)?.createNotificationChannel(channel)
+        getSystemService(NotificationManager::class.java)
+            ?.createNotificationChannel(channel)
 
-        return NotificationCompat.Builder(this, channelId)
+        val notification = NotificationCompat.Builder(this, channelId)
             .setContentTitle("Token Monitor Running")
             .setContentText("Monitoring token validity in the background")
             .setSmallIcon(android.R.drawable.ic_dialog_info)
             .build()
+
+        startForeground(1, notification)
+        Log.d("TokenMonitorService", "Foreground service started.")
     }
 
     private fun startTokenCheckLoop() {
         serviceScope.launch {
-            Log.d("TokenMonitorService", "Token refreshed at the start of the app.")
+            Log.d("TokenMonitorService", "Initial token check.")
             checkTokenExpiry()
-            Log.d("TokenMonitorService", "Token check loop started.")
             while (isActive) {
-                counter++
-
-                if (counter >= refreshThreshold) {
-                    checkTokenExpiry()
-                    Log.d("TokenMonitorService", "Both token will be refreshed now.")
-                    counter = 0
-                }
-
-                delay(1000)
+                delay(60000)
+                checkTokenExpiry()
             }
         }
+        Log.d("TokenMonitorService", "Token check loop started.")
     }
 
     private suspend fun checkTokenExpiry() {
-        val userUuid = getUserUidUseCase.invoke().firstOrNull() ?: return
+        val userUuid = getUserUidUseCase().firstOrNull()
+            ?: return
 
-        val spotifyToken = getSpotifyTokenUseCase(userUuid)
-        val soundCloudToken = getSoundCloudTokenUseCase(userUuid)
-
-        if(spotifyToken != null) {
-            refreshSpotifyAccessToken(userUuid, spotifyToken.refreshToken)
-            if(GlobalContext.loggedInMusicSources.find { x -> x == "Spotify" } == null) {
-                GlobalContext.loggedInMusicSources.add("Spotify")
+        getSpotifyTokenUseCase(userUuid)?.let { token ->
+            val nowSec = System.currentTimeMillis() / 1000
+            if (nowSec >= token.expiresAt - 60) {  // within 60s of expiry
+                Log.d("TokenMonitorService", "Refreshing Spotify token for $userUuid")
+                refreshSpotifyAccessToken(userUuid, token.refreshToken)
+                GlobalContext.loggedInMusicSources.addIfMissing("Spotify")
             }
-            Log.d("TokenMonitorService", "Spotify token refreshed.")
         }
-        if(soundCloudToken != null) {
-            refreshSoundcloudAccessToken(userUuid, soundCloudToken.refreshToken)
-            if(GlobalContext.loggedInMusicSources.find { x -> x == "SoundCloud" } == null) {
-                GlobalContext.loggedInMusicSources.add("SoundCloud")
+
+        getSoundCloudTokenUseCase(userUuid)?.let { token ->
+            val nowSec = System.currentTimeMillis() / 1000
+            if (nowSec >= token.expiresAt - 60) {
+                Log.d("TokenMonitorService", "Refreshing SoundCloud token for $userUuid")
+                refreshSoundcloudAccessToken(userUuid, token.refreshToken)
+                GlobalContext.loggedInMusicSources.addIfMissing("SoundCloud")
             }
-            Log.d("TokenMonitorService", "SoundCloud token refreshed.")
         }
     }
 
@@ -120,7 +107,9 @@ class TokenMonitorService : Service() {
         serviceScope.cancel()
     }
 
-    override fun onBind(intent: Intent?): IBinder? {
-        return null
-    }
+    override fun onBind(intent: Intent?): IBinder? = null
+}
+
+private fun MutableList<String>.addIfMissing(source: String) {
+    if (!contains(source)) add(source)
 }
