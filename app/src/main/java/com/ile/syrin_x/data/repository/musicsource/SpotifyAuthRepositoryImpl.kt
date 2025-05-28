@@ -35,7 +35,9 @@ class SpotifyAuthRepositoryImpl @Inject constructor(
                             dao.insertToken(spotifyAuthToken)
                             Log.d("Spotify Login", "Spotify token saved.")
                             GlobalContext.Tokens.spotifyToken = token.accessToken
-                            GlobalContext.loggedInMusicSources.add("Spotify")
+                            if(GlobalContext.loggedInMusicSources.find { x -> x === "Spotify" } == null) {
+                                GlobalContext.loggedInMusicSources.add("Spotify")
+                            }
                             return@withContext spotifyAuthToken
                         }
                     }

@@ -1,5 +1,6 @@
 package com.ile.syrin_x.ui.screen
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -23,6 +24,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
@@ -64,9 +66,7 @@ fun OnboardingScreen(
     val hasSeen by viewModel.hasSeenOnboarding.collectAsState()
 
     if (hasSeen) {
-        LaunchedEffect(Unit) {
-            onFinished()
-        }
+        LaunchedEffect(Unit) { onFinished() }
         return
     }
 
@@ -75,28 +75,23 @@ fun OnboardingScreen(
         color = MaterialTheme.colorScheme.background
     ) {
         Column(
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(16.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Column(
-                modifier = Modifier
-                    .verticalScroll(rememberScrollState())
-                    .padding(vertical = 50.dp, horizontal = 16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                sections.forEach { section ->
-                    OnboardingSectionCard(section)
-                    Spacer(modifier = Modifier.height(24.dp))
-                }
+            sections.forEach { section ->
+                OnboardingSectionCard(section)
+                Spacer(modifier = Modifier.height(24.dp))
             }
 
             Button(
                 onClick = {
                     viewModel.markOnboardingShown()
                     onFinished()
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp, vertical = 16.dp)
+                }
             ) {
                 Text(text = "Get Started")
             }
@@ -107,15 +102,16 @@ fun OnboardingScreen(
 @Composable
 private fun OnboardingSectionCard(section: OnboardingSection) {
     Card(
-        modifier = Modifier
-            .fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Column(
-            modifier = Modifier.padding(20.dp),
+            modifier = Modifier
+                .padding(20.dp)
+                .fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Icon(
@@ -126,18 +122,25 @@ private fun OnboardingSectionCard(section: OnboardingSection) {
                     .size(64.dp)
                     .padding(top = 8.dp)
             )
+
             Spacer(modifier = Modifier.height(16.dp))
+
             Text(
                 text = section.title,
                 style = MaterialTheme.typography.headlineSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
             )
+
             Spacer(modifier = Modifier.height(8.dp))
+
             Text(
                 text = section.description,
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
             )
         }
     }

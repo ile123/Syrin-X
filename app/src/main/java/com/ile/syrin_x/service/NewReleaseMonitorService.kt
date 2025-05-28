@@ -11,6 +11,7 @@ import androidx.core.app.NotificationCompat
 import com.google.firebase.database.FirebaseDatabase
 import com.ile.syrin_x.data.api.DeezerApi
 import com.ile.syrin_x.data.database.NewReleaseNotificationDao
+import com.ile.syrin_x.data.model.entity.FavoriteArtist
 import com.ile.syrin_x.data.model.entity.NewReleaseNotificationEntity
 import com.ile.syrin_x.domain.core.Response
 import com.ile.syrin_x.domain.usecase.auth.GetUserUidUseCase
@@ -18,12 +19,21 @@ import com.ile.syrin_x.domain.usecase.user.GetAllFavoriteArtistsByUserUseCase
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ObsoleteCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.channels.ticker
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 import java.time.Instant
 import java.time.LocalDate
 import java.util.UUID
@@ -34,30 +44,32 @@ class NewReleaseMonitorService : Service() {
 
     @Inject
     lateinit var getUserUidUseCase: GetUserUidUseCase
-
     @Inject
     lateinit var getFavoriteArtistsUseCase: GetAllFavoriteArtistsByUserUseCase
-
     @Inject
     lateinit var deezerApi: DeezerApi
-
     @Inject
     lateinit var notificationDao: NewReleaseNotificationDao
-
     @Inject
     lateinit var firebaseDb: FirebaseDatabase
 
     private val serviceScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     private val ARTIST_REQUEST_DELAY_MS = 500L
-    private val CHECK_INTERVAL_MS = 15 * 60 * 1000L
+    private val CHECK_INTERVAL_MS = 15 * 60 * 1_000L
+    private val MAX_CONCURRENT_ARTIST_CALLS = 4
 
     override fun onCreate() {
         super.onCreate()
         startForeground(1, createNotification())
+
         serviceScope.launch {
             while (isActive) {
-                checkAllFavoritesForNewReleases()
+                try {
+                    checkAllFavoritesForNewReleases()
+                } catch (t: Throwable) {
+                    Log.e("NewReleaseMonitorSvc", "Error during check, will retry", t)
+                }
                 delay(CHECK_INTERVAL_MS)
             }
         }
@@ -65,10 +77,13 @@ class NewReleaseMonitorService : Service() {
 
     private fun createNotification(): Notification {
         val channelId = "new_releases_monitor"
-        val channelName = "New Releases Monitor"
         val mgr = getSystemService(NotificationManager::class.java)
         mgr?.createNotificationChannel(
-            NotificationChannel(channelId, channelName, NotificationManager.IMPORTANCE_LOW)
+            NotificationChannel(
+                channelId,
+                "New Releases Monitor",
+                NotificationManager.IMPORTANCE_LOW
+            )
         )
         return NotificationCompat.Builder(this, channelId)
             .setContentTitle("Checking for new releases…")
@@ -76,91 +91,94 @@ class NewReleaseMonitorService : Service() {
             .build()
     }
 
-    private suspend fun checkAllFavoritesForNewReleases() {
-        val userId = getUserUidUseCase().firstOrNull() ?: return
-        val oneWeekAgo = LocalDate.now().minusDays(7)
-        Log.d("NewReleaseMonitorService", "Checking if any new songs were added.")
-        getFavoriteArtistsUseCase(userId)
-            .collect { response ->
-                when (response) {
-                    is Response.Success -> {
-                        val favorites = response.data
-                        for (fav in favorites) {
-                            val searchResponse = runCatching {
-                                deezerApi.searchArtists(fav.name)
-                            }.getOrNull()
-                            val deezerArtist = searchResponse
-                                ?.data
-                                ?.firstOrNull { it.name.equals(fav.name, ignoreCase = true) }
-                            if (deezerArtist == null) {
-                                delay(ARTIST_REQUEST_DELAY_MS)
-                                continue
-                            }
-                            val artistId = deezerArtist.id
+    @OptIn(ObsoleteCoroutinesApi::class)
+    private suspend fun checkAllFavoritesForNewReleases() = coroutineScope {
+        val userId = getUserUidUseCase()
+            .firstOrNull()
+            ?: return@coroutineScope
 
-                            val albumResponse = runCatching {
-                                deezerApi.getArtistAlbums(artistId)
-                            }.getOrNull()
-                            val albums = albumResponse?.data.orEmpty()
-                            if (albums.isEmpty()) {
-                                delay(ARTIST_REQUEST_DELAY_MS)
-                                continue
-                            }
+        val cutoffDate = LocalDate.now().minusDays(7)
 
-                            val recent = albums.filter {
-                                LocalDate.parse(it.release_date).isAfter(oneWeekAgo)
-                            }
+        Log.d("NewReleaseMonitorSvc", "Checking for new releases…")
 
-                            for (album in recent) {
-                                val albumReleaseDate = album.release_date
-                                    .let { LocalDate.parse(it) }
-                                    ?: LocalDate.now().minusWeeks(2)
-                                val newTracks = runCatching {
-                                    deezerApi.getAlbumTracks(album.id).data
-                                }.getOrNull()
-                                    .orEmpty()
-                                    .filter {
-                                        albumReleaseDate.isAfter(oneWeekAgo)
-                                    }
-                                for (track in newTracks) {
-                                    Log.d(
-                                        "NewReleaseMonitorService",
-                                        "Track ${track.title} has been released."
-                                    )
-                                    val existing = notificationDao.getExistingNotification(
-                                        track.title,
-                                        artistId
-                                    )
-                                    if (existing == null) {
-                                        val notification = NewReleaseNotificationEntity(
-                                            userId = userId,
-                                            trackId = track.id,
-                                            artistId = artistId,
-                                            title = "${fav.name} – ${track.title}",
-                                            timestamp = Instant.now().toEpochMilli(),
-                                            seen = false
-                                        )
-                                        notificationDao.insert(notification)
-                                        firebaseDb
-                                            .getReference("users/$userId/newReleasesNotifications/${notification.trackId}")
-                                            .setValue(notification)
-                                    }
-                                }
-                            }
+        val favorites = getFavoriteArtistsUseCase(userId)
+            .filter { it is Response.Success }
+            .map { (it as Response.Success<List<FavoriteArtist>>).data }
+            .firstOrNull()
+            .orEmpty()
 
-                            delay(ARTIST_REQUEST_DELAY_MS)
-                        }
+        if (favorites.isEmpty()) return@coroutineScope
+
+        val tickerChannel = ticker(
+            delayMillis = ARTIST_REQUEST_DELAY_MS,
+            initialDelayMillis = 0
+        )
+
+        val semaphore = Semaphore(MAX_CONCURRENT_ARTIST_CALLS)
+
+        favorites.map { fav ->
+            async {
+                semaphore.withPermit {
+                    val deezerArtist = runCatching {
+                        tickerChannel.receive()
+                        deezerApi.searchArtists(fav.name)
+                    }.getOrNull()
+                        ?.data
+                        ?.firstOrNull { it.name.equals(fav.name, ignoreCase = true) }
+
+                    if (deezerArtist == null) return@withPermit
+
+                    val artistId = deezerArtist.id
+
+                    val albums = runCatching {
+                        tickerChannel.receive()
+                        deezerApi.getArtistAlbums(artistId).data
+                    }.getOrNull().orEmpty()
+
+                    val recentAlbums = albums.filter { album ->
+                        LocalDate.parse(album.release_date).let { !it.isBefore(cutoffDate) }
                     }
 
-                    is Response.Loading -> {}
-                    is Response.Error -> Log.e(
-                        "NewReleaseService",
-                        "Failed to load favorites: ${response.message}"
-                    )
+                    for (album in recentAlbums) {
+                        val albumDate = LocalDate.parse(album.release_date)
+
+                        val tracks = runCatching {
+                            tickerChannel.receive()
+                            deezerApi.getAlbumTracks(album.id).data
+                        }.getOrNull().orEmpty()
+
+                        tracks.filter {
+                            !albumDate.isBefore(cutoffDate)
+                        }.forEach { track ->
+                            Log.d("NewReleaseMonitorSvc", "New track: ${track.title}")
+
+                            val existing = notificationDao.getExistingNotification(
+                                track.title,
+                                artistId
+                            )
+                            if (existing == null) {
+                                val notification = NewReleaseNotificationEntity(
+                                    userId = userId,
+                                    trackId = track.id,
+                                    artistId = artistId,
+                                    title = "${fav.name} – ${track.title}",
+                                    timestamp = Instant.now().toEpochMilli(),
+                                    seen = false
+                                )
+                                notificationDao.insert(notification)
+                                firebaseDb
+                                    .getReference("users/$userId/newReleasesNotifications/${track.id}")
+                                    .setValue(notification)
+                            }
+                        }
+                    }
                 }
             }
-    }
+        }
+            .awaitAll()
 
+        tickerChannel.cancel()
+    }
 
     override fun onBind(intent: Intent?): IBinder? = null
 
