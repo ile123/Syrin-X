@@ -1,5 +1,6 @@
 package com.ile.syrin_x.viewModel
 
+import androidx.compose.animation.core.RepeatMode
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -38,6 +39,9 @@ class PlayerViewModel @Inject constructor(
 
     private val _shuffleMode = MutableStateFlow(ShuffleMode.OFF)
     val shuffleMode: StateFlow<ShuffleMode> = _shuffleMode
+
+    private val _repeatMode = MutableStateFlow(MusicPlayerRepeatMode.OFF)
+    val repeatMode: StateFlow<MusicPlayerRepeatMode> = _repeatMode
 
     sealed class PlayerUiEvent {
         data object ExpandPlayer : PlayerUiEvent()
@@ -91,11 +95,12 @@ class PlayerViewModel @Inject constructor(
     }
 
     fun toggleCurrentRepeatMode() {
-        val next = when (audioPlayer.currentRepeatMode) {
+        val next = when (_repeatMode.value) {
             MusicPlayerRepeatMode.OFF -> MusicPlayerRepeatMode.ALL
             MusicPlayerRepeatMode.ALL -> MusicPlayerRepeatMode.OFF
         }
         audioPlayer.setCurrentRepeatMode(next)
+        _repeatMode.value = next
     }
 
     fun toggleShuffleMode() {

@@ -32,7 +32,7 @@ fun PlayerScaffold(
     val isPlaying by viewModel.isPlaying.collectAsState()
     val duration by viewModel.duration.collectAsState()
     val position by viewModel.playbackPosition.collectAsState()
-    val repeatMode = viewModel.audioPlayer.currentRepeatMode
+    val repeatMode by viewModel.repeatMode.collectAsStateWithLifecycle()
     val shuffleMode by viewModel.shuffleMode.collectAsStateWithLifecycle()
 
     var showFullPlayer by remember { mutableStateOf(false) }
